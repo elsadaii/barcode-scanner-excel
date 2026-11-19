@@ -212,7 +212,7 @@ body{
           <div class="admin-stat"><div class="stat"><span>Total data produk aktif</span><strong id="rowCount">0</strong></div><div class="stat"><span>File aktif</span><strong id="fileState" style="font-size:14px;word-break:break-word">Belum ada</strong></div></div>
           <div><b style="font-size:13px">Kolom yang terbaca</b><div class="columns" id="columnList"><span class="chip">Belum ada file</span></div></div>
           <div class="warning-note" id="legacyBox" hidden><b>Data Excel lama ditemukan di browser PC ini.</b><br>Data yang sebelumnya sudah Anda upload masih tersimpan di browser PC. Tekan tombol berikut untuk memindahkannya ke database online, tanpa memilih file Excel lagi.<div class="actions"><button class="btn dark" id="migrateLegacy" type="button">Kirim data lama ke server</button></div></div>
-          <div class="actions"><button class="btn danger" id="clearData" type="button">Hapus katalog online</button></div>
+          <div class="actions"><button class="btn dark" id="toggleDatabase" type="button">Jadikan Database Offline</button><button class="btn danger" id="clearData" type="button">Hapus katalog online</button></div>
           <div class="hint">Setelah upload berhasil, HP dan PC yang login dengan akun aplikasi akan membaca katalog online yang sama. Untuk mengganti data, upload file Excel terbaru dari sini.</div>
         </div>
         <div class="panel"><h2 style="font-size:16px;margin:0 0 8px">Cara kerja pencarian</h2><p class="hint" style="margin:0">Setiap barcode dicari pada kedua kolom: <b>UPC</b> dan <b>Article</b>. Salah satu boleh kosong. Jika kode cocok dengan lebih dari satu baris, semua hasil ditampilkan agar Anda dapat memilih data yang benar.</p></div>
@@ -241,7 +241,7 @@ body{
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
-    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null;
+    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null, latestImportId = null;
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
     const clean = v => v == null ? '' : String(v).trim();
     const norm = v => clean(v).toLocaleUpperCase('en-US');
@@ -402,13 +402,17 @@ body{
         const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
         if(stateError)throw stateError;
         activeImportId=state?.active_import_id||null;
-        if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn','Database belum tersedia. Admin perlu mengunggah file Excel dari menu Admin Data.');renderAdmin();return;}
-        const {data:info,error:infoError}=await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single();
+        const {data:info,error:infoError}=activeImportId?await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single():await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').order('uploaded_at',{ascending:false}).limit(1).maybeSingle();
         if(infoError)throw infoError;
+        latestImportId=info?.id||null;
+        if(!info){metadata=null;products=[];showStatus($('catalogStatus'),'warn','Database belum tersedia. Admin perlu mengunggah file Excel dari menu Admin Data.');$('toggleDatabase').disabled=true;$('toggleDatabase').textContent='Database belum tersedia';renderAdmin();return;}
         metadata={fileName:info.file_name,uploadedAt:info.uploaded_at,headers:info.headers||[],totalRows:info.total_rows};
+        if(!activeImportId){products=[];showStatus($('catalogStatus'),'warn','Database sedang Offline. Aktifkan kembali agar scanner dapat membaca data.');$('toggleDatabase').disabled=false;$('toggleDatabase').textContent='Aktifkan Database';renderAdmin();return;}
+        $('toggleDatabase').disabled=false;$('toggleDatabase').textContent='Jadikan Database Offline';
+        if(infoError)throw infoError;
         const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Database diperbarui pada: ${uploadDateLabel}${uploadTimeLabel?', pukul '+uploadTimeLabel+' WIB':''} · ${Number(info.total_rows||0).toLocaleString('id-ID')} data.`);
         renderAdmin();
-      }catch(e){showStatus($('catalogStatus'),'error','Gagal mengambil database: '+(e.message||e));}
+      }catch(e){metadata=null;products=[];$('toggleDatabase').disabled=true;showStatus($('catalogStatus'),'error','Gagal mengambil database: '+(e.message||e));}
     }
 
     function parseCSV(text){
@@ -498,14 +502,24 @@ body{
       catch(e){showStatus($('uploadStatus'),'error','Pemindahan data lama gagal: '+(e.message||e));}
       finally{$('migrateLegacy').disabled=false;}
     }));
+    $('toggleDatabase').addEventListener('click',async()=>{
+      if(!isAdmin){showStatus($('uploadStatus'),'error','Hanya Admin yang dapat mengubah status database.');return;}
+      const goingOffline=!!activeImportId;
+      if(goingOffline&&!confirm('Jadikan database Offline? Semua scanner tidak akan dapat menampilkan data sampai database diaktifkan kembali. Data tetap tersimpan.'))return;
+      try{
+        let targetId=activeImportId;
+        if(!goingOffline){if(!latestImportId){showStatus($('uploadStatus'),'warn','Belum ada data tersimpan untuk diaktifkan.');return;}targetId=latestImportId;}
+        const {error}=await supabase.from('barcode_catalog_state').upsert({singleton:true,active_import_id:goingOffline?null:targetId},{onConflict:'singleton'});if(error)throw error;
+        await refreshCatalog();showStatus($('uploadStatus'),'ok',goingOffline?'Database berhasil dibuat Offline. Data tetap tersimpan.':'Database berhasil diaktifkan kembali. Scanner dapat membaca data.');
+      }catch(e){showStatus($('uploadStatus'),'error','Status database gagal diubah: '+(e.message||e));}
+    });
     $('clearData').addEventListener('click',()=>requirePin('delete',async()=>{
-      if(!activeImportId){showStatus($('uploadStatus'),'info','Belum ada katalog online yang aktif.');return;}
+      const oldId=activeImportId||latestImportId;if(!oldId){showStatus($('uploadStatus'),'info','Belum ada katalog tersimpan.');return;}
       if(!confirm('Hapus katalog Excel online? Semua perangkat akan kehilangan data pencarian sampai Admin mengunggah file baru.'))return;
       try{
         const {error:stateError}=await supabase.from('barcode_catalog_state').delete().eq('singleton',true);if(stateError)throw stateError;
-        const oldId=activeImportId;activeImportId=null;
         const {error:deleteError}=await supabase.from('barcode_imports').delete().eq('id',oldId);if(deleteError)throw deleteError;
-        await refreshCatalog();showStatus($('uploadStatus'),'ok','Katalog online sudah dihapus.');
+        activeImportId=null;latestImportId=null;await refreshCatalog();showStatus($('uploadStatus'),'ok','Katalog online sudah dihapus.');
       }catch(e){showStatus($('uploadStatus'),'error','Katalog gagal dihapus: '+e.message);}
     }));
 
