@@ -144,7 +144,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
     const clean = v => v == null ? '' : String(v).trim();
     const norm = v => clean(v).toLocaleUpperCase('en-US');
-    const PIN_HASH_KEY='barcode_db_pin_hash_v1',PIN_TRIES_KEY='barcode_db_pin_tries_v1';
+    const PIN_HASH_KEY='barcode_db_pin_hash_v2',PIN_TRIES_KEY='barcode_db_pin_tries_v2';
     let pinUnlocked=false,pinMode='verify',pinResolve=null,pinAction=null;
     const pinHash=async value=>{const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');};
     function openPinDialog(action){
