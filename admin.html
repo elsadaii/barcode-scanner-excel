@@ -79,6 +79,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
         <div><label for="loginPassword">Password</label><input class="text-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password akun"></div>
       </div>
       <button class="btn primary" id="loginBtn" type="button">Masuk</button>
+      <a class="small-btn" href="./index.html" style="display:inline-flex;align-items:center;justify-content:center;margin-top:10px;text-decoration:none">← Kembali ke Scanner Pengguna</a>
       <div class="status" id="loginStatus" role="status"></div>
       <p class="hint">Halaman ini khusus Admin. Pengguna scanner tidak perlu login.</p>
     </section>
@@ -293,7 +294,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     }
     $('loginBtn').addEventListener('click',signIn);
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
-    $('logoutBtn').addEventListener('click',async()=>{stopCamera();const {error}=await supabase.auth.signOut();if(error)showStatus($('cameraStatus'),'error',error.message);else showLoggedOut('Anda sudah keluar.');});
+    $('logoutBtn').addEventListener('click',async()=>{stopCamera();$('logoutBtn').disabled=true;const {error}=await supabase.auth.signOut();if(error){$('logoutBtn').disabled=false;showStatus($('cameraStatus'),'error','Gagal keluar: '+error.message);return;}window.location.replace('./index.html?from=admin-logout');});
 
     async function refreshCatalog(){
       showStatus($('catalogStatus'),'info','Mengambil informasi database…');
