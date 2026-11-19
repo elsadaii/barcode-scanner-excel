@@ -17,7 +17,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .brand h1{font-family:Georgia,"Times New Roman",serif;font-size:25px;letter-spacing:.01em;font-weight:500;line-height:1.1;margin:0}.brand p{margin:6px 0 0;color:#c5d2c9;font-size:12px;letter-spacing:.035em}
 .user-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}.user-email{font-size:12px;color:#d7e0d9;max-width:210px;overflow-wrap:anywhere}
 .small-btn{padding:9px 13px;font-size:12px;font-weight:700;letter-spacing:.02em;border:1px solid rgba(255,255,255,.23);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;cursor:pointer}.small-btn:hover{background:rgba(255,255,255,.16)}
-.access-notice{max-width:980px;margin:12px auto 0;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#f4e7cb;font-size:12px;line-height:1.5}.tabs{display:flex;gap:8px;margin-top:12px}.menu-dropdown{position:relative;z-index:20;right:auto;top:auto;margin:12px 0 0 auto;padding:10px;width:min(100%,260px);min-width:190px;flex-direction:column;background:#1b352c;border:1px solid rgba(255,255,255,.16);border-radius:13px;box-shadow:0 16px 38px rgba(0,0,0,.28)}.menu-dropdown .tab{text-align:left;width:100%;border-radius:9px}.menu-toggle{display:inline-flex;align-items:center;gap:8px}.menu-glyph{font-size:17px;line-height:1}.tab{border:1px solid rgba(255,255,255,.18);color:#dbe5dd;background:rgba(255,255,255,.055);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;letter-spacing:.01em;cursor:pointer}.tab:hover{background:rgba(255,255,255,.13)}.tab.active{background:#f5f0e6;color:#21362d;border-color:#f5f0e6;box-shadow:0 5px 16px rgba(0,0,0,.12)}
+.access-notice{max-width:980px;margin:12px auto 0;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#f4e7cb;font-size:12px;line-height:1.5}.tabs{display:flex;gap:8px;margin-top:12px}.menu-dropdown{position:relative;z-index:20;right:auto;top:auto;margin:12px 0 0 auto;padding:10px;width:min(100%,260px);min-width:190px;flex-direction:column;background:#1b352c;border:1px solid rgba(255,255,255,.16);border-radius:13px;box-shadow:0 16px 38px rgba(0,0,0,.28)}.menu-dropdown .tab{text-align:left;width:100%;border-radius:9px}.menu-user{display:block;padding:7px 10px 10px;border-bottom:1px solid rgba(255,255,255,.14);margin-bottom:3px;max-width:100%;color:#d7e0d9}.menu-logout{margin-top:5px;border-color:rgba(255,255,255,.13);color:#f0c5bc}.menu-toggle{display:inline-flex;align-items:center;gap:8px}.menu-glyph{font-size:17px;line-height:1}.tab{border:1px solid rgba(255,255,255,.18);color:#dbe5dd;background:rgba(255,255,255,.055);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;letter-spacing:.01em;cursor:pointer}.tab:hover{background:rgba(255,255,255,.13)}.tab.active{background:#f5f0e6;color:#21362d;border-color:#f5f0e6;box-shadow:0 5px 16px rgba(0,0,0,.12)}
 .app{padding:27px 18px 56px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:19px;box-shadow:var(--shadow);padding:23px;margin-bottom:17px}
 .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:17px}.section-head h2{font-family:Georgia,"Times New Roman",serif;font-weight:500;font-size:23px;letter-spacing:-.015em;margin:0;color:#1d3128}.section-head p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.6}.section-head b{color:#344b3e}
 .camera-wrap{position:relative;background:radial-gradient(ellipse at center,#1d2c27,#080f0d 80%);overflow:hidden;border-radius:15px;min-height:245px;aspect-ratio:16/9;display:grid;place-items:center;color:#fff;border:1px solid #25362e}.camera-wrap video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
@@ -54,9 +54,8 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
   <header class="top"><div class="top-inner">
     <div class="header-row">
       <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
-      <div class="user-tools" id="userTools" hidden><span class="user-email" id="userEmail"></span><button class="small-btn" id="logoutBtn" type="button">Keluar</button></div>
     </div>
-    <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button></nav>
+    <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
   </div></header>
 
@@ -133,12 +132,12 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 
     function showLoggedOut(message){
       stopCamera();currentUser=null;isAdmin=false;activeImportId=null;products=[];metadata=null;
-      $('authPage').hidden=false;$('appContent').hidden=true;$('appTabs').hidden=true;$('userTools').hidden=true;$('menuToggle').hidden=true;$('accessNotice').hidden=true;
+      $('authPage').hidden=false;$('appContent').hidden=true;$('appTabs').hidden=true;$('menuToggle').hidden=true;$('accessNotice').hidden=true;
       if(message) showStatus($('loginStatus'),'info',message);
     }
     async function activateUser(user){
       currentUser=user;const userEmail=String(user.email||'').trim().toLowerCase();const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();isAdmin=!!adminEmail&&userEmail===adminEmail;
-      $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('userTools').hidden=false;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
+      $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
       $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('accessNotice').hidden=true;$('accessNotice').textContent='';
       if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
       await refreshCatalog();
