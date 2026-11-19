@@ -208,13 +208,13 @@ body{
           <div class="section-head"><div><h2>Admin — Data Excel</h2><p>Upload Excel dari PC satu kali. Perangkat lain yang login akan langsung menggunakan katalog yang sama.</p></div></div>
           <div class="file-drop"><div class="up">⇧</div><strong>Pilih file Excel</strong><p>Format: .xlsx, .xls, atau .csv.<br>Header: UPC, Article, Article Description, Stock, Special Stock.</p><input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"></div>
           <div class="panel" style="margin-top:16px">
-            <div class="section-head"><div><h2>Sinkronisasi Google Drive</h2><p>Simpan file Excel utama di Google Drive. Setelah Anda mengedit dan menyimpannya, tekan tombol sinkronisasi untuk memperbarui katalog.</p></div></div>
+            <div class="section-head"><div><h2>Sinkronisasi Google Drive</h2><p>Simpan file Excel utama di Google Drive. Sinkronkan untuk mengambil data terbaru; edit produk dari Admin akan memperbarui file Excel di Drive.</p></div></div>
             <div class="form-grid">
               <div><label for="googleClientId">Google OAuth Client ID</label><input class="text-input" id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off"></div>
               <div><label for="googleDriveFile">Link atau ID file Excel di Google Drive</label><input class="text-input" id="googleDriveFile" type="text" placeholder="Tempel link Google Drive atau ID file" autocomplete="off"></div>
             </div>
             <div class="actions"><button class="btn primary" id="syncGoogleDrive" type="button">☁ Sinkronkan dari Google Drive</button></div>
-            <p class="hint">Pengaturan file dan Client ID disimpan pada browser Admin ini. File harus berformat .xlsx atau .xls dan tetap privat. Saat pertama kali digunakan, Google akan meminta izin membaca file Drive Anda.</p>
+            <p class="hint">Pengaturan file dan Client ID disimpan pada browser Admin ini. File .xlsx/.xls tetap privat. Google meminta izin membaca dan memperbarui file. Setiap edit produk akan memperbarui Excel di Drive dan database online.</p>
             <div class="status" id="googleDriveStatus" role="status"></div>
           </div>
                     <div class="status" id="uploadStatus" role="status"></div>
@@ -502,7 +502,7 @@ body{
         try{
           googleTokenClient=google.accounts.oauth2.initTokenClient({
             client_id:clientId,
-            scope:'https://www.googleapis.com/auth/drive.readonly',
+            scope:'https://www.googleapis.com/auth/drive',
             callback:response=>{
               if(response.error){reject(new Error(response.error_description||response.error));return;}
               if(!response.access_token){reject(new Error('Google tidak memberikan izin akses.'));return;}
@@ -543,6 +543,36 @@ body{
         await publishDataset(parsed.data,meta.name,parsed.headers);
         showStatus($('googleDriveStatus'),'ok','Sinkronisasi berhasil. '+parsed.data.length.toLocaleString('id-ID')+' baris dari “'+meta.name+'” sudah diterapkan ke katalog.');
       }finally{$('syncGoogleDrive').disabled=false;}
+    }
+    async function updateGoogleDriveRow(original,values){
+      const clientId=clean($('googleClientId').value),fileId=extractDriveFileId($('googleDriveFile').value);
+      if(!clientId||!fileId)throw new Error('Pengaturan Google Drive belum lengkap. Isi Client ID dan file Excel terlebih dahulu.');
+      localStorage.setItem(GOOGLE_CLIENT_KEY,clientId);localStorage.setItem(GOOGLE_FILE_KEY,fileId);
+      const token=await requestGoogleDriveToken(clientId);
+      const download=await fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?alt=media',{headers:{Authorization:'Bearer '+token}});
+      if(!download.ok)throw new Error('Gagal membaca Excel dari Drive ('+download.status+'). '+(await download.text()).slice(0,180));
+      const source=await download.arrayBuffer();
+      const workbook=XLSX.read(source,{type:'array',cellDates:false});
+      const sheetName=workbook.SheetNames[0],sheet=workbook.Sheets[sheetName];
+      if(!sheet)throw new Error('Sheet pertama pada Excel tidak ditemukan.');
+      const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''});
+      if(!matrix.length)throw new Error('Excel di Google Drive kosong.');
+      const headerMap={};(matrix[0]||[]).forEach((h,i)=>headerMap[norm(h)]=i);
+      const missing=EXPECTED.filter(h=>headerMap[norm(h)]===undefined);
+      if(missing.length)throw new Error('Kolom Excel tidak lengkap: '+missing.join(', ')+'.');
+      const rowIndex=Number(original.row_number)-1;
+      if(!Number.isInteger(rowIndex)||rowIndex<1||rowIndex>=matrix.length)throw new Error('Nomor baris produk tidak cocok dengan Excel di Drive. Sinkronkan ulang katalog dari file master sebelum mengedit.');
+      const row=matrix[rowIndex]||[];
+      if(clean(row[headerMap[norm('UPC')]])!==clean(original.upc)||clean(row[headerMap[norm('Article')]])!==clean(original.article))throw new Error('Isi baris Excel sudah berbeda dari database. Sinkronkan ulang dari Google Drive sebelum mengedit agar data tidak tertimpa.');
+      EXPECTED.forEach(h=>{const key=h==='Article Description'?'article_description':h.toLowerCase().replace(/ /g,'_');row[headerMap[norm(h)]]=values[key]??'';});
+      matrix[rowIndex]=row;
+      workbook.Sheets[sheetName]=XLSX.utils.aoa_to_sheet(matrix);
+      const output=XLSX.write(workbook,{bookType:'xlsx',type:'array'});
+      const upload=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(fileId)+'?uploadType=media',{
+        method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:output
+      });
+      if(!upload.ok)throw new Error('Perubahan gagal ditulis ke Excel Google Drive ('+upload.status+'). '+(await upload.text()).slice(0,220));
+      return true;
     }
     $('syncGoogleDrive').addEventListener('click',()=>requirePin('upload',async()=>{
       clearStatus($('googleDriveStatus'));
@@ -596,6 +626,7 @@ body{
           let nextImagePath=p.image_path||null;const imageFile=photoInput.files?.[0];
           if(imageFile){saveStep='mengunggah foto';const ext=(imageFile.type.split('/')[1]||'jpeg').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');uploadedPath=activeImportId+'/'+p.id+'-'+Date.now()+'.'+(ext||'jpg');const {error:uploadError}=await supabase.storage.from('barcode-product-images').upload(uploadedPath,imageFile,{contentType:imageFile.type,upsert:true,cacheControl:'3600'});if(uploadError)throw new Error('Upload foto gagal: '+uploadError.message);nextImagePath=uploadedPath;}
           if(removePhoto.checked&&!imageFile)nextImagePath=null;
+          saveStep='memperbarui Excel Google Drive';await updateGoogleDriveRow(p,values);
           saveStep='menyimpan produk';values.image_path=nextImagePath;
           const {data:savedRow,error}=await supabase.from('barcode_products').update(values).eq('id',p.id).eq('import_id',activeImportId).select('id,upc,upc_norm,image_path').maybeSingle();
           if(error)throw new Error('Pembaruan baris produk ditolak: '+error.message);if(!savedRow)throw new Error('Tidak ada baris produk yang diperbarui. Periksa izin UPDATE/RLS untuk barcode_products atau kecocokan ID katalog aktif.');
