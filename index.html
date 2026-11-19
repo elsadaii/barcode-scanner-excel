@@ -57,7 +57,103 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .pin-error{font-size:12px;line-height:1.5;color:#a94c43;min-height:18px;margin-top:9px}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
-\n/* Tampilan pengguna: hanya scanner dan hasil pencarian. */\n#adminPage,#appTabs,#menuToggle,#accessNotice,#pinBackdrop{display:none!important}\n</style>
+\n/* Tampilan pengguna: hanya scanner dan hasil pencarian. */\n#adminPage,#appTabs,#menuToggle,#accessNotice,#pinBackdrop{display:none!important}\n
+/* Premium visual refresh — presentation only */
+:root{
+ --bg:#f0eee8;--panel:#fffefa;--ink:#202b27;--muted:#77817a;
+ --line:#e4dfd3;--navy:#10251e;--blue:#245747;--green:#2f7659;
+ --red:#a94c43;--shadow:0 20px 55px rgba(18,38,29,.09);--gold:#c9a96f;
+}
+body{
+ background:radial-gradient(ellipse at 8% -5%,rgba(201,169,111,.18),transparent 34%),
+ radial-gradient(ellipse at 95% 15%,rgba(43,91,69,.08),transparent 30%),#f0eee8;
+}
+.top{
+ background:linear-gradient(120deg,#0d211a 0%,#17372b 52%,#28513e 100%);
+ box-shadow:0 12px 32px rgba(10,30,21,.13);
+}
+.top:after{
+ content:"";position:absolute;inset:auto 0 0;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(221,190,135,.65),transparent);
+}
+.logo,.login-brand{
+ background:linear-gradient(145deg,rgba(215,185,130,.22),rgba(255,255,255,.045));
+ border:1px solid rgba(215,185,130,.34);color:#e6c991;
+ box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 22px rgba(0,0,0,.12);
+}
+.brand h1,.section-head h2,.result-card h3,.pin-card h2{
+ letter-spacing:-.025em;
+}
+.brand h1{font-size:27px}
+.brand p{letter-spacing:.07em;text-transform:uppercase;font-size:10px}
+.app{max-width:1020px}
+.panel{
+ border:1px solid rgba(218,211,196,.82);border-radius:21px;
+ box-shadow:0 14px 42px rgba(28,43,34,.065),0 2px 8px rgba(28,43,34,.025);
+ background:linear-gradient(160deg,#fffefa 0%,#fffdf8 100%);
+}
+.section-head{margin-bottom:20px}
+.section-head h2{font-size:25px}
+.section-head p{max-width:650px}
+.btn,.tab,.small-btn{transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease}
+.btn{border-radius:12px;min-height:43px;box-shadow:0 3px 8px rgba(20,40,30,.035)}
+.primary{
+ background:linear-gradient(135deg,#2e7054,#1c4938);
+ box-shadow:0 7px 17px rgba(31,84,60,.17);
+}
+.primary:hover:not(:disabled){background:linear-gradient(135deg,#347c5d,#225540)}
+.dark{background:linear-gradient(135deg,#1d3429,#10251d)}
+.light{background:#f7f5ef;border-color:#e8e2d5}
+.manual input,.file-input,.text-input,.edit-form input,.pin-card input{
+ border-color:#e1dccf;border-radius:12px;background:#fffefa;
+}
+.manual input:focus,.file-input:focus,.text-input:focus,.edit-form input:focus,.pin-card input:focus{
+ border-color:#b99a63;box-shadow:0 0 0 4px rgba(201,169,111,.13);outline:none;
+}
+.result-card,.edit-item{
+ border-color:#e8e1d3;border-radius:16px;
+ background:linear-gradient(145deg,#fffefa,#faf8f1);
+ box-shadow:0 5px 16px rgba(25,42,32,.035);
+}
+.result-card h3,.edit-item h3{color:#1e3b2d}
+.field{background:#f7f6f0;border-color:#eeeadf;border-radius:11px}
+.field strong{color:#243c30}
+.stat{
+ background:linear-gradient(145deg,#fffdf7,#f2f0e7);
+ border-color:#e8e1d2;border-radius:15px;
+}
+.stat strong{color:#214a36}
+.file-drop{
+ border:1px dashed #c9b88f;border-radius:16px;
+ background:linear-gradient(145deg,#fffdf8,#f5f1e7);
+}
+.chip{background:#eef2eb;border-color:#e1e8dc}
+.status{border-radius:12px}
+.empty{border-radius:15px;background:#fbfaf6}
+.menu-dropdown{
+ background:linear-gradient(145deg,#17372b,#10251e);
+ border-color:rgba(215,185,130,.2);border-radius:14px;
+ box-shadow:0 18px 38px rgba(0,0,0,.28);
+}
+.tab.active{background:linear-gradient(135deg,#f8f1e3,#e9dcc0);border-color:#e9dcc0;color:#20372b}
+.small-btn{border-radius:11px}
+.login-card{padding:30px}
+.login-brand{border-radius:20px}
+.pin-card{border-radius:21px;border-color:#e5dece}
+.camera-wrap{border-radius:18px;box-shadow:inset 0 0 35px rgba(0,0,0,.22)}
+.footer{letter-spacing:.07em}
+@media(hover:hover){
+ .panel{transition:box-shadow .22s ease,transform .22s ease}
+ .result-card:hover,.edit-item:hover{box-shadow:0 10px 24px rgba(25,42,32,.075);transform:translateY(-1px)}
+}
+@media(max-width:600px){
+ .brand h1{font-size:23px}
+ .panel{border-radius:17px}
+ .section-head h2{font-size:22px}
+ .login-card{padding:22px}
+}
+
+</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
 </head>
