@@ -7,237 +7,265 @@
   <title>Barcode Scanner — UPC & Article</title>
   <style>
     :root{--bg:#f3f5f9;--panel:#fff;--ink:#172033;--muted:#697386;--line:#e5e9f0;--navy:#111827;--blue:#2563eb;--green:#12805c;--red:#c0392b;--shadow:0 12px 32px rgba(20,32,55,.08)}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .top{background:linear-gradient(135deg,#111827,#263b5b);color:#fff;padding:22px 18px 28px}
-    .top-inner,.app{max-width:860px;margin:0 auto}.brand{display:flex;align-items:center;gap:12px}.logo{width:43px;height:43px;border-radius:13px;background:#ffffff18;display:grid;place-items:center;font-size:23px}.brand h1{font-size:19px;line-height:1.2;margin:0}.brand p{margin:4px 0 0;color:#c5d0e0;font-size:12px}
-    .tabs{display:flex;gap:8px;margin-top:22px}.tab{border:1px solid #ffffff30;color:#dbe5f3;background:#ffffff0d;border-radius:11px;padding:10px 15px;font-size:14px;font-weight:650;cursor:pointer}.tab.active{background:#fff;color:#172033;border-color:#fff}
+    *{box-sizing:border-box} [hidden]{display:none!important} body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .top{background:linear-gradient(135deg,#111827,#263b5b);color:#fff;padding:22px 18px 24px}.top-inner,.app{max-width:860px;margin:0 auto}.brand{display:flex;align-items:center;gap:12px}.logo{width:43px;height:43px;border-radius:13px;background:#ffffff18;display:grid;place-items:center;font-size:23px}.brand h1{font-size:19px;line-height:1.2;margin:0}.brand p{margin:4px 0 0;color:#c5d0e0;font-size:12px}.header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}.user-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}.user-email{font-size:12px;color:#d7e0ee;max-width:210px;overflow-wrap:anywhere}.tabs{display:flex;gap:8px;margin-top:20px}.tab{border:1px solid #ffffff30;color:#dbe5f3;background:#ffffff0d;border-radius:11px;padding:10px 15px;font-size:14px;font-weight:650;cursor:pointer}.tab.active{background:#fff;color:#172033;border-color:#fff}
     .app{padding:18px 14px 44px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.section-head h2{font-size:18px;margin:0}.section-head p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
     .camera-wrap{position:relative;background:#090d15;overflow:hidden;border-radius:15px;min-height:220px;aspect-ratio:16/10;display:grid;place-items:center;color:white}.camera-wrap video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}.camera-placeholder{position:relative;z-index:1;text-align:center;padding:24px;color:#d4dbea}.camera-placeholder .cam-icon{font-size:42px;margin-bottom:8px}.camera-placeholder strong{display:block;font-size:15px}.camera-placeholder small{display:block;margin-top:6px;color:#a9b5c9;font-size:12px}.scan-frame{position:absolute;z-index:2;width:min(68%,330px);height:105px;border:2px solid #4ade80;border-radius:13px;box-shadow:0 0 0 100vmax #0005;pointer-events:none;display:none}.scan-frame:before,.scan-frame:after{content:"";position:absolute;left:8px;right:8px;height:2px;background:#4ade80;top:50%;box-shadow:0 0 9px #4ade80}
-    .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:11px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--blue);color:#fff}.dark{background:var(--navy);color:#fff}.light{background:#edf1f7;color:#263247}.danger{background:#fff0ef;color:var(--red)}
-    .manual{display:flex;gap:8px;margin-top:16px}.manual input,.file-input{width:100%;min-width:0;border:1px solid #d8deea;border-radius:11px;padding:12px 13px;font-size:15px;background:white;color:var(--ink)}.manual input:focus,.file-input:focus{outline:3px solid #2563eb1c;border-color:#7ca4f7}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin:9px 0 0}.status{padding:11px 13px;border-radius:11px;font-size:13px;margin-top:12px;display:none;line-height:1.45}.status.info{display:block;background:#eff6ff;color:#1d4ed8}.status.ok{display:block;background:#ecfdf5;color:#08734d}.status.warn{display:block;background:#fff8e8;color:#8b5b00}.status.error{display:block;background:#fff1f0;color:#b42318}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:11px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--blue);color:#fff}.dark{background:var(--navy);color:#fff}.light{background:#edf1f7;color:#263247}.danger{background:#fff0ef;color:var(--red)}.small-btn{padding:8px 11px;font-size:12px;border:1px solid #ffffff40;background:#ffffff10;color:#fff;border-radius:9px}
+    .manual{display:flex;gap:8px;margin-top:16px}.manual input,.file-input,.text-input{width:100%;min-width:0;border:1px solid #d8deea;border-radius:11px;padding:12px 13px;font-size:15px;background:white;color:var(--ink)}.manual input:focus,.file-input:focus,.text-input:focus{outline:3px solid #2563eb1c;border-color:#7ca4f7}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin:9px 0 0}.status{padding:11px 13px;border-radius:11px;font-size:13px;margin-top:12px;display:none;line-height:1.45}.status.info{display:block;background:#eff6ff;color:#1d4ed8}.status.ok{display:block;background:#ecfdf5;color:#08734d}.status.warn{display:block;background:#fff8e8;color:#8b5b00}.status.error{display:block;background:#fff1f0;color:#b42318}
     .result-title{font-weight:750;font-size:16px;margin:18px 0 10px}.result-card{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:10px;background:#fff}.result-card h3{font-size:16px;line-height:1.35;margin:0 0 11px}.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{background:#f7f8fb;border-radius:10px;padding:10px;min-width:0}.field span{display:block;font-size:10px;letter-spacing:.06em;color:#788296;font-weight:800;text-transform:uppercase;margin-bottom:5px}.field strong{font-size:14px;word-break:break-word;white-space:pre-wrap}.field.wide{grid-column:1/-1}.empty{padding:22px 14px;text-align:center;color:var(--muted);border:1px dashed #d7deea;border-radius:13px;font-size:13px}
-    .admin-stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.stat{background:#f5f7fb;border-radius:12px;padding:13px}.stat span{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase}.stat strong{display:block;font-size:22px;margin-top:4px}.file-drop{border:1.5px dashed #b9c5d8;border-radius:14px;padding:18px;text-align:center;background:#fafcff}.file-drop .up{font-size:30px}.file-drop strong{display:block;margin:7px 0 4px}.file-drop p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}.file-drop input{margin-top:13px;max-width:100%}.columns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.chip{background:#eef2f8;color:#344054;border-radius:30px;padding:6px 10px;font-size:11px;font-weight:700}.warning-note{background:#fff8e8;border:1px solid #f4dfae;color:#76520a;padding:12px;border-radius:12px;font-size:12px;line-height:1.5;margin-top:14px}.footer{text-align:center;color:#8a93a4;font-size:11px;padding:8px 0 18px}
+    .admin-stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.stat{background:#f5f7fb;border-radius:12px;padding:13px}.stat span{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase}.stat strong{display:block;font-size:22px;margin-top:4px}.file-drop{border:1.5px dashed #b9c5d8;border-radius:14px;padding:18px;text-align:center;background:#fafcff}.file-drop .up{font-size:30px}.file-drop strong{display:block;margin:7px 0 4px}.file-drop p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}.file-drop input{margin-top:13px;max-width:100%}.columns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.chip{background:#eef2f8;color:#344054;border-radius:30px;padding:6px 10px;font-size:11px;font-weight:700}.warning-note{background:#fff8e8;border:1px solid #f4dfae;color:#76520a;padding:12px;border-radius:12px;font-size:12px;line-height:1.5;margin-top:14px}.footer{text-align:center;color:#8a93a4;font-size:11px;padding:8px 0 18px}.form-grid{display:grid;gap:12px}.form-grid label{display:block;font-size:12px;font-weight:750;color:#344054;margin-bottom:6px}.login-card{max-width:480px;margin:24px auto}.login-brand{font-size:34px;text-align:center;margin:4px 0 12px}.login-card .btn{width:100%;margin-top:12px}.progress{height:8px;background:#e9edf4;border-radius:50px;overflow:hidden;margin-top:10px}.progress>div{height:100%;width:0;background:#16a36a;transition:width .15s}
     @media(min-width:700px){.top{padding:28px 24px 30px}.app{padding:22px 20px 50px}.panel{padding:22px}.camera-wrap{aspect-ratio:16/8}.product-grid{grid-template-columns:repeat(2,1fr)}}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
 </head>
 <body>
   <header class="top"><div class="top-inner">
-    <div class="brand"><div class="logo">▥</div><div><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div></div>
-    <nav class="tabs" aria-label="Navigasi aplikasi"><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button">⚙ Admin Data</button></nav>
+    <div class="header-row">
+      <div class="brand"><div class="logo">▥</div><div><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div></div>
+      <div class="user-tools" id="userTools" hidden><span class="user-email" id="userEmail"></span><button class="small-btn" id="logoutBtn" type="button">Keluar</button></div>
+    </div>
+    <nav class="tabs" id="appTabs" aria-label="Navigasi aplikasi" hidden><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button></nav>
   </div></header>
+
   <main class="app">
-    <section id="scannerPage">
-      <div class="panel">
-        <div class="section-head"><div><h2>Scan barcode</h2><p>Arahkan barcode ke dalam bingkai kamera. Pencarian memakai kolom UPC <b>atau</b> Article.</p></div></div>
-        <div class="camera-wrap" id="cameraWrap">
-          <video id="video" autoplay muted playsinline></video>
-          <div class="camera-placeholder" id="cameraPlaceholder"><div class="cam-icon">▣</div><strong>Kamera belum diaktifkan</strong><small>Tekan tombol Mulai Scan untuk membuka kamera belakang HP.</small></div>
-          <div class="scan-frame" id="scanFrame"></div>
-        </div>
-        <div class="actions"><button class="btn primary" id="startCamera" type="button">▣ Mulai Scan</button><button class="btn light" id="stopCamera" type="button" disabled>Hentikan</button></div>
-        <div class="status" id="cameraStatus" role="status"></div>
-        <form class="manual" id="manualForm"><input id="manualCode" autocomplete="off" placeholder="Atau ketik / tempel UPC atau Article…" aria-label="Masukkan kode barcode"><button class="btn dark" type="submit">Cari</button></form>
-        <p class="hint">Catatan: kamera memerlukan izin akses dan aplikasi harus dibuka melalui alamat HTTPS (misalnya GitHub Pages). Jika kamera tidak didukung browser, kolom pencarian manual tetap bisa digunakan.</p>
+    <section id="authPage" class="panel login-card">
+      <div class="login-brand">🔐</div>
+      <div class="section-head"><div><h2>Masuk ke Barcode Scanner</h2><p>Gunakan akun yang sama di PC dan HP agar semuanya membaca data Excel dari tempat yang sama.</p></div></div>
+      <div class="form-grid">
+        <div><label for="loginEmail">Email</label><input class="text-input" id="loginEmail" type="email" autocomplete="username" placeholder="nama@email.com"></div>
+        <div><label for="loginPassword">Password</label><input class="text-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password akun"></div>
       </div>
-      <div class="panel" id="resultsPanel"><div class="section-head"><div><h2>Hasil pencarian</h2><p id="resultSubtitle">Hasil scan akan ditampilkan di sini.</p></div></div><div class="empty" id="emptyResult">Belum ada barcode yang dipindai.</div><div id="results"></div></div>
+      <button class="btn primary" id="loginBtn" type="button">Masuk</button>
+      <div class="status" id="loginStatus" role="status"></div>
+      <p class="hint">Akun dibuat satu kali melalui Supabase Authentication. Jangan masukkan password Supabase atau API secret di sini; gunakan akun pengguna yang dibuat untuk aplikasi.</p>
     </section>
 
-    <section id="adminPage" hidden>
-      <div class="panel">
-        <div class="section-head"><div><h2>Admin — Data Excel</h2><p>Upload file Excel Anda di sini. Aplikasi membaca baris pertama sebagai header kolom.</p></div></div>
-        <div class="file-drop"><div class="up">⇧</div><strong>Pilih file Excel</strong><p>Format yang didukung: .xlsx, .xls, atau .csv.<br>Nama header yang digunakan: UPC, Article, Article Description, Stock, Special Stock.</p><input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"></div>
-        <div class="status" id="uploadStatus" role="status"></div>
-        <div class="admin-stat"><div class="stat"><span>Total data produk</span><strong id="rowCount">0</strong></div><div class="stat"><span>File aktif</span><strong id="fileState" style="font-size:14px;word-break:break-word">Belum ada</strong></div></div>
-        <div><b style="font-size:13px">Kolom yang terbaca</b><div class="columns" id="columnList"><span class="chip">Belum ada file</span></div></div>
-        <div class="actions"><button class="btn danger" id="clearData" type="button">Hapus data tersimpan</button></div>
-        <div class="warning-note"><b>Penyimpanan versi awal:</b> file Excel disimpan di penyimpanan browser pada perangkat ini, bukan dikirim ke server. Jadi upload dari halaman Admin pada HP yang akan dipakai untuk scan. Jika data dihapus atau browser membersihkan penyimpanan situs, file perlu diunggah kembali. Sinkronisasi admin-ke-banyak-HP memerlukan backend/database dan bisa ditambahkan pada tahap berikutnya.</div>
-      </div>
-      <div class="panel"><h2 style="font-size:16px;margin:0 0 8px">Cara kerja pencarian</h2><p class="hint" style="margin:0">Setiap barcode dicari pada kedua kolom: <b>UPC</b> dan <b>Article</b>. Salah satu boleh kosong. Jika kode cocok dengan lebih dari satu baris, semua hasil yang cocok akan ditampilkan agar Anda dapat memilih data yang benar.</p></div>
-    </section>
-    <div class="footer">Barcode Scanner · Pencocokan data lokal dari Excel</div>
+    <div id="appContent" hidden>
+      <section id="scannerPage">
+        <div class="panel">
+          <div class="section-head"><div><h2>Scan barcode</h2><p>Arahkan barcode ke dalam bingkai kamera. Pencarian memakai kolom UPC <b>atau</b> Article.</p></div></div>
+          <div class="status info" id="catalogStatus" role="status">Menghubungkan ke katalog online…</div>
+          <div class="camera-wrap" id="cameraWrap">
+            <video id="video" autoplay muted playsinline></video>
+            <div class="camera-placeholder" id="cameraPlaceholder"><div class="cam-icon">▣</div><strong>Kamera belum diaktifkan</strong><small>Tekan tombol Mulai Scan untuk membuka kamera belakang HP.</small></div>
+            <div class="scan-frame" id="scanFrame"></div>
+          </div>
+          <div class="actions"><button class="btn primary" id="startCamera" type="button">▣ Mulai Scan</button><button class="btn light" id="stopCamera" type="button" disabled>Hentikan</button></div>
+          <div class="status" id="cameraStatus" role="status"></div>
+          <form class="manual" id="manualForm"><input id="manualCode" autocomplete="off" placeholder="Atau ketik / tempel UPC atau Article…" aria-label="Masukkan kode barcode"><button class="btn dark" type="submit">Cari</button></form>
+          <p class="hint">Koneksi internet diperlukan untuk mencari katalog online. Kamera memerlukan izin akses dan alamat HTTPS (misalnya GitHub Pages).</p>
+        </div>
+        <div class="panel" id="resultsPanel"><div class="section-head"><div><h2>Hasil pencarian</h2><p id="resultSubtitle">Hasil scan akan ditampilkan di sini.</p></div></div><div class="empty" id="emptyResult">Belum ada barcode yang dipindai.</div><div id="results"></div></div>
+      </section>
+
+      <section id="adminPage" hidden>
+        <div class="panel">
+          <div class="section-head"><div><h2>Admin — Data Excel</h2><p>Upload Excel dari PC satu kali. Perangkat lain yang login akan langsung menggunakan katalog yang sama.</p></div></div>
+          <div class="file-drop"><div class="up">⇧</div><strong>Pilih file Excel</strong><p>Format: .xlsx, .xls, atau .csv.<br>Header: UPC, Article, Article Description, Stock, Special Stock.</p><input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"></div>
+          <div class="status" id="uploadStatus" role="status"></div>
+          <div class="progress" id="uploadProgress" hidden><div id="uploadProgressBar"></div></div>
+          <div class="admin-stat"><div class="stat"><span>Total data produk aktif</span><strong id="rowCount">0</strong></div><div class="stat"><span>File aktif</span><strong id="fileState" style="font-size:14px;word-break:break-word">Belum ada</strong></div></div>
+          <div><b style="font-size:13px">Kolom yang terbaca</b><div class="columns" id="columnList"><span class="chip">Belum ada file</span></div></div>
+          <div class="warning-note" id="legacyBox" hidden><b>Data Excel lama ditemukan di browser PC ini.</b><br>Data yang sebelumnya sudah Anda upload masih tersimpan di browser PC. Tekan tombol berikut untuk memindahkannya ke database online, tanpa memilih file Excel lagi.<div class="actions"><button class="btn dark" id="migrateLegacy" type="button">Kirim data lama ke server</button></div></div>
+          <div class="actions"><button class="btn danger" id="clearData" type="button">Hapus katalog online</button></div>
+          <div class="hint">Setelah upload berhasil, HP dan PC yang login dengan akun aplikasi akan membaca katalog online yang sama. Untuk mengganti data, upload file Excel terbaru dari sini.</div>
+        </div>
+        <div class="panel"><h2 style="font-size:16px;margin:0 0 8px">Cara kerja pencarian</h2><p class="hint" style="margin:0">Setiap barcode dicari pada kedua kolom: <b>UPC</b> dan <b>Article</b>. Salah satu boleh kosong. Jika kode cocok dengan lebih dari satu baris, semua hasil ditampilkan agar Anda dapat memilih data yang benar.</p></div>
+      </section>
+    </div>
+    <div class="footer">Barcode Scanner · Katalog online UPC & Article</div>
   </main>
 
-  <!-- SheetJS membaca file Excel. Jika CDN tidak tersedia, impor .xlsx/.xls belum dapat dilakukan; CSV tetap dapat dibaca oleh parser bawaan. -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
   (() => {
     'use strict';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
-    let products = [], metadata = null, stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null;
-
-    function showStatus(el, type, message){ el.className = 'status ' + type; el.textContent = message; }
-    function clearStatus(el){ el.className = 'status'; el.textContent = ''; }
-    function clean(v){ return v == null ? '' : String(v).trim(); }
-    function norm(v){ return clean(v).toLocaleUpperCase('en-US'); }
-    function setTab(which){
-      const admin = which === 'admin';
-      $('scannerPage').hidden = admin; $('adminPage').hidden = !admin;
-      $('tabScanner').classList.toggle('active', !admin); $('tabAdmin').classList.toggle('active', admin);
-      if(admin) stopCamera();
-    }
+    const cfg = window.BARCODE_SUPABASE_CONFIG || {};
+    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null;
+    let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
+    const clean = v => v == null ? '' : String(v).trim();
+    const norm = v => clean(v).toLocaleUpperCase('en-US');
+    function showStatus(el,type,message){el.className='status '+type;el.textContent=message;}
+    function clearStatus(el){el.className='status';el.textContent='';}
+    function setTab(which){const admin=which==='admin';$('scannerPage').hidden=admin;$('adminPage').hidden=!admin;$('tabScanner').classList.toggle('active',!admin);$('tabAdmin').classList.toggle('active',admin);if(admin)stopCamera();}
     $('tabScanner').addEventListener('click',()=>setTab('scanner'));
     $('tabAdmin').addEventListener('click',()=>setTab('admin'));
 
-    function openDB(){
-      return new Promise((resolve,reject)=>{
-        if(!('indexedDB' in window)){ resolve(null); return; }
-        const req = indexedDB.open('barcode-scanner-local',1);
-        req.onupgradeneeded = () => { if(!req.result.objectStoreNames.contains('app')) req.result.createObjectStore('app',{keyPath:'key'}); };
-        req.onsuccess = ()=>resolve(req.result); req.onerror = ()=>reject(req.error);
-      });
+    function showLoggedOut(message){
+      stopCamera();currentUser=null;isAdmin=false;activeImportId=null;products=[];metadata=null;
+      $('authPage').hidden=false;$('appContent').hidden=true;$('appTabs').hidden=true;$('userTools').hidden=true;
+      if(message) showStatus($('loginStatus'),'info',message);
     }
-    async function saveLocal(){
-      const db = await openDB(); if(!db) throw new Error('Penyimpanan browser tidak tersedia.');
-      return new Promise((resolve,reject)=>{ const tx=db.transaction('app','readwrite'); tx.objectStore('app').put({key:'dataset',products,metadata}); tx.oncomplete=()=>{db.close();resolve();}; tx.onerror=()=>{db.close();reject(tx.error);}; });
+    async function activateUser(user){
+      currentUser=user;isAdmin=!!cfg.adminEmail&&String(user.email||'').toLowerCase()===String(cfg.adminEmail).toLowerCase();
+      $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=false;$('userTools').hidden=false;
+      $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;
+      if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
+      await refreshCatalog();
+      if(isAdmin) await detectLegacyData();
     }
-    async function loadLocal(){
-      const db = await openDB(); if(!db) return;
-      return new Promise(resolve=>{ const req=db.transaction('app','readonly').objectStore('app').get('dataset'); req.onsuccess=()=>{ if(req.result){products=req.result.products||[];metadata=req.result.metadata||null;} db.close(); renderAdmin(); resolve(); }; req.onerror=()=>{db.close();resolve();}; });
+    async function signIn(){
+      const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+      if(!email||!password){showStatus($('loginStatus'),'warn','Masukkan email dan password akun aplikasi.');return;}
+      $('loginBtn').disabled=true;showStatus($('loginStatus'),'info','Sedang masuk…');
+      try{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;clearStatus($('loginStatus'));}
+      catch(e){showStatus($('loginStatus'),'error',e.message||'Login gagal. Periksa email dan password.');}
+      finally{$('loginBtn').disabled=false;}
     }
-    async function deleteLocal(){
-      const db=await openDB(); if(!db){products=[];metadata=null;return;}
-      return new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').delete('dataset');tx.oncomplete=()=>{db.close();products=[];metadata=null;resolve();};tx.onerror=()=>{db.close();reject(tx.error);};});
+    $('loginBtn').addEventListener('click',signIn);
+    $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
+    $('logoutBtn').addEventListener('click',async()=>{stopCamera();const {error}=await supabase.auth.signOut();if(error)showStatus($('cameraStatus'),'error',error.message);else showLoggedOut('Anda sudah keluar.');});
+
+    async function refreshCatalog(){
+      showStatus($('catalogStatus'),'info','Mengambil informasi katalog online…');
+      try{
+        const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
+        if(stateError)throw stateError;
+        activeImportId=state?.active_import_id||null;
+        if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn','Belum ada katalog Excel online. Admin perlu mengunggah file dari menu Admin Data.');renderAdmin();return;}
+        const {data:info,error:infoError}=await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single();
+        if(infoError)throw infoError;
+        metadata={fileName:info.file_name,uploadedAt:info.uploaded_at,headers:info.headers||[],totalRows:info.total_rows};
+        showStatus($('catalogStatus'),'ok',`Katalog online siap: ${Number(info.total_rows||0).toLocaleString('id-ID')} baris · ${info.file_name}.`);
+        renderAdmin();
+      }catch(e){showStatus($('catalogStatus'),'error','Gagal mengambil katalog online: '+(e.message||e));}
     }
 
     function parseCSV(text){
-      const first = text.split(/\r?\n/,1)[0] || ''; const delimiter = (first.match(/;/g)||[]).length > (first.match(/,/g)||[]).length ? ';' : ',';
-      const rows=[]; let row=[], cell='', quoted=false;
-      for(let i=0;i<text.length;i++){
-        const c=text[i];
-        if(c==='"' && quoted && text[i+1]==='"'){cell+='"';i++;}
-        else if(c==='"'){quoted=!quoted;}
-        else if(c===delimiter && !quoted){row.push(cell);cell='';}
-        else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';}
-        else cell+=c;
-      }
-      row.push(cell); if(row.some(x=>x!=='')) rows.push(row); return rows;
+      const first=text.split(/\r?\n/,1)[0]||'';const delimiter=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',';
+      const rows=[];let row=[],cell='',quoted=false;
+      for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"'){quoted=!quoted;}else if(c===delimiter&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';}else cell+=c;}
+      row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows;
     }
     function rowsToProducts(matrix){
-      if(!matrix || matrix.length<2) throw new Error('File tidak memiliki baris data.');
-      const headers = matrix[0].map(clean); const map={};
-      headers.forEach((h,i)=>{map[norm(h)]=i;});
-      const missing = EXPECTED.filter(h=>map[norm(h)]===undefined);
-      if(missing.length) throw new Error('Header tidak lengkap. Kolom yang belum ditemukan: '+missing.join(', ')+'. Pastikan nama header sesuai.');
-      const data=[];
-      for(let r=1;r<matrix.length;r++){
-        const line=matrix[r]||[]; const item={};
-        EXPECTED.forEach(h=> item[h]=clean(line[map[norm(h)]]));
-        if(EXPECTED.some(h=>item[h]!=='')) data.push(item);
-      }
-      if(!data.length) throw new Error('Header ditemukan, tetapi tidak ada baris data yang terisi.');
-      return {data,headers};
+      if(!matrix||matrix.length<2)throw new Error('File tidak memiliki baris data.');
+      const headers=matrix[0].map(clean),map={};headers.forEach((h,i)=>map[norm(h)]=i);
+      const missing=EXPECTED.filter(h=>map[norm(h)]===undefined);if(missing.length)throw new Error('Header tidak lengkap. Kolom yang belum ditemukan: '+missing.join(', ')+'.');
+      const data=[];for(let r=1;r<matrix.length;r++){const line=matrix[r]||[],item={};EXPECTED.forEach(h=>item[h]=clean(line[map[norm(h)]]));if(EXPECTED.some(h=>item[h]!==''))data.push(item);}
+      if(!data.length)throw new Error('Header ditemukan, tetapi tidak ada baris data yang terisi.');return {data,headers};
+    }
+    async function readExcelFile(file){
+      const ext=(file.name.split('.').pop()||'').toLowerCase();let matrix;
+      if(ext==='csv')matrix=parseCSV(await file.text());
+      else{if(!window.XLSX)throw new Error('Pembaca Excel belum dimuat. Periksa internet, muat ulang halaman, lalu coba lagi.');const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false});const sheet=wb.Sheets[wb.SheetNames[0]];if(!sheet)throw new Error('Sheet pertama tidak ditemukan.');matrix=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''});}
+      return rowsToProducts(matrix);
+    }
+    function setProgress(done,total){$('uploadProgress').hidden=false;$('uploadProgressBar').style.width=(total?Math.round(done/total*100):0)+'%';}
+    async function publishDataset(data,fileName,headers){
+      if(!isAdmin)throw new Error('Hanya akun Admin yang dapat mengganti katalog.');
+      if(!data?.length)throw new Error('Tidak ada baris data untuk dikirim.');
+      showStatus($('uploadStatus'),'info','Membuat versi katalog baru…');
+      const {data:created,error:createError}=await supabase.from('barcode_imports').insert({file_name:fileName,total_rows:data.length,headers,uploaded_by:currentUser.id}).select('id').single();
+      if(createError)throw createError;const newId=created.id;
+      try{
+        const chunkSize=350,total=Math.ceil(data.length/chunkSize);
+        for(let start=0;start<data.length;start+=chunkSize){
+          const batch=data.slice(start,start+chunkSize).map((p,i)=>({import_id:newId,row_number:start+i+2,upc:clean(p.UPC),article:clean(p.Article),article_description:clean(p['Article Description']),stock:clean(p.Stock),special_stock:clean(p['Special Stock'])}));
+          const {error}=await supabase.from('barcode_products').insert(batch);if(error)throw error;
+          setProgress(Math.min(Math.ceil((start+chunkSize)/chunkSize),total),total);
+          showStatus($('uploadStatus'),'info',`Mengirim data ke server: ${Math.min(start+chunkSize,data.length).toLocaleString('id-ID')} dari ${data.length.toLocaleString('id-ID')} baris…`);
+        }
+        const {error:activateError}=await supabase.from('barcode_catalog_state').upsert({singleton:true,active_import_id:newId},{onConflict:'singleton'});
+        if(activateError)throw activateError;
+      }catch(e){await supabase.from('barcode_imports').delete().eq('id',newId);throw e;}
+      // Remove older imports after the new catalog is active, keeping only one current dataset.
+      try{await supabase.from('barcode_imports').delete().neq('id',newId);}catch(cleanupError){}
+      activeImportId=newId;await refreshCatalog();
+      showStatus($('uploadStatus'),'ok',`Berhasil! ${data.length.toLocaleString('id-ID')} baris dari “${fileName}” sudah tersimpan online dan dapat dibaca dari PC maupun HP yang login.`);
+      $('uploadProgressBar').style.width='100%';
+      if(legacyData){$('legacyBox').hidden=true;legacyData=null;}
+      return true;
     }
     async function handleUpload(file){
-      if(!file) return; clearStatus($('uploadStatus'));
-      try{
-        const ext=(file.name.split('.').pop()||'').toLowerCase(); let matrix;
-        if(ext==='csv') matrix=parseCSV(await file.text());
-        else {
-          if(!window.XLSX) throw new Error('Pembaca Excel belum berhasil dimuat. Sambungkan perangkat ke internet, muat ulang aplikasi, lalu coba upload lagi. Untuk sementara, file .csv dapat digunakan tanpa pustaka Excel.');
-          const buf=await file.arrayBuffer(); const wb=XLSX.read(buf,{type:'array',cellDates:false});
-          const sheet=wb.Sheets[wb.SheetNames[0]]; if(!sheet) throw new Error('Sheet pertama tidak ditemukan.');
-          matrix=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''});
-        }
-        const parsed=rowsToProducts(matrix);
-        products=parsed.data; metadata={fileName:file.name,uploadedAt:new Date().toISOString(),headers:parsed.headers};
-        await saveLocal(); renderAdmin();
-        showStatus($('uploadStatus'),'ok',`Berhasil memuat ${products.length.toLocaleString('id-ID')} baris dari “${file.name}”. UPC dan Article sudah siap digunakan untuk pencarian.`);
-        $('excelFile').value='';
-      }catch(err){ showStatus($('uploadStatus'),'error',err.message||'File gagal dibaca.'); }
+      if(!file)return;clearStatus($('uploadStatus'));$('excelFile').disabled=true;
+      try{const parsed=await readExcelFile(file);await publishDataset(parsed.data,file.name,parsed.headers);$('excelFile').value='';}
+      catch(e){showStatus($('uploadStatus'),'error',e.message||'File gagal diproses.');}
+      finally{$('excelFile').disabled=false;setTimeout(()=>{$('uploadProgress').hidden=true;$('uploadProgressBar').style.width='0%';},900);}
     }
     $('excelFile').addEventListener('change',e=>handleUpload(e.target.files[0]));
 
     function renderAdmin(){
-      $('rowCount').textContent=products.length.toLocaleString('id-ID');
+      $('rowCount').textContent=metadata?Number(metadata.totalRows||0).toLocaleString('id-ID'):'0';
       $('fileState').textContent=metadata?metadata.fileName:'Belum ada';
-      const list=$('columnList'); list.innerHTML='';
-      (metadata?.headers?.length?metadata.headers:[]).forEach(h=>{const s=document.createElement('span');s.className='chip';s.textContent=h;list.appendChild(s);});
+      const list=$('columnList');list.innerHTML='';(metadata?.headers?.length?metadata.headers:[]).forEach(h=>{const s=document.createElement('span');s.className='chip';s.textContent=h;list.appendChild(s);});
       if(!list.children.length){const s=document.createElement('span');s.className='chip';s.textContent='Belum ada file';list.appendChild(s);}
     }
+    function openLegacyDB(){return new Promise(resolve=>{if(!('indexedDB'in window)){resolve(null);return;}const req=indexedDB.open('barcode-scanner-local',1);req.onsuccess=()=>{const db=req.result;if(!db.objectStoreNames.contains('app')){db.close();resolve(null);return;}const get=db.transaction('app','readonly').objectStore('app').get('dataset');get.onsuccess=()=>{const value=get.result||null;db.close();resolve(value);};get.onerror=()=>{db.close();resolve(null);};};req.onerror=()=>resolve(null);});}
+    async function detectLegacyData(){
+      try{const old=await openLegacyDB();if(old?.products?.length){legacyData=old;$('legacyBox').hidden=false;}else{$('legacyBox').hidden=true;}}catch(e){$('legacyBox').hidden=true;}
+    }
+    $('migrateLegacy').addEventListener('click',async()=>{
+      if(!legacyData?.products?.length)return;
+      $('migrateLegacy').disabled=true;
+      try{await publishDataset(legacyData.products,legacyData.metadata?.fileName||'Data Excel lama',legacyData.metadata?.headers||EXPECTED);}
+      catch(e){showStatus($('uploadStatus'),'error','Pemindahan data lama gagal: '+(e.message||e));}
+      finally{$('migrateLegacy').disabled=false;}
+    });
     $('clearData').addEventListener('click',async()=>{
-      if(!products.length) {showStatus($('uploadStatus'),'info','Belum ada data yang tersimpan.');return;}
-      if(!confirm('Hapus seluruh data Excel yang tersimpan di browser ini?')) return;
-      try{await deleteLocal();renderAdmin();$('results').innerHTML='';$('emptyResult').hidden=false;$('emptyResult').textContent='Data Excel sudah dihapus.';showStatus($('uploadStatus'),'ok','Data Excel berhasil dihapus dari perangkat ini.');}catch(e){showStatus($('uploadStatus'),'error','Data gagal dihapus: '+e.message);}
+      if(!activeImportId){showStatus($('uploadStatus'),'info','Belum ada katalog online yang aktif.');return;}
+      if(!confirm('Hapus katalog Excel online? Semua perangkat akan kehilangan data pencarian sampai Admin mengunggah file baru.'))return;
+      try{
+        const {error:stateError}=await supabase.from('barcode_catalog_state').delete().eq('singleton',true);if(stateError)throw stateError;
+        const oldId=activeImportId;activeImportId=null;
+        const {error:deleteError}=await supabase.from('barcode_imports').delete().eq('id',oldId);if(deleteError)throw deleteError;
+        await refreshCatalog();showStatus($('uploadStatus'),'ok','Katalog online sudah dihapus.');
+      }catch(e){showStatus($('uploadStatus'),'error','Katalog gagal dihapus: '+e.message);}
     });
 
-    function lookup(code){
-      const searched=clean(code); if(!searched) return;
-      $('manualCode').value=searched;
-      if(!products.length){showResultMessage('File Excel belum diunggah. Buka tab Admin Data dan upload file terlebih dahulu.','warn');return;}
-      const key=norm(searched);
-      const found=products.map((p,index)=>({p,index})).filter(({p})=> (p.UPC!==''&&norm(p.UPC)===key)||(p.Article!==''&&norm(p.Article)===key));
-      $('emptyResult').hidden=true; $('results').innerHTML='';
-      $('resultSubtitle').textContent=`Pencarian untuk: ${searched}`;
-      if(!found.length){showResultMessage(`Barcode “${searched}” tidak ditemukan pada kolom UPC maupun Article.`,'error');return;}
-      const label=found.length===1?'1 data ditemukan':`${found.length} data cocok — pilih data yang benar`;
-      const heading=document.createElement('div');heading.className='result-title';heading.textContent=label;$('results').appendChild(heading);
-      found.forEach(({p,index})=>{
-        const card=document.createElement('article');card.className='result-card';
-        const h=document.createElement('h3');h.textContent=p['Article Description']||'(Deskripsi tidak tersedia)';card.appendChild(h);
-        const grid=document.createElement('div');grid.className='product-grid';
-        const entries=[['UPC',p.UPC],['Article',p.Article],['Article Description',p['Article Description'],'wide'],['Stock',p.Stock],['Special Stock',p['Special Stock']]];
-        entries.forEach(([name,value,wide])=>{const f=document.createElement('div');f.className='field'+(wide?' wide':'');const s=document.createElement('span');s.textContent=name;const b=document.createElement('strong');b.textContent=value!==''?value:'—';f.append(s,b);grid.appendChild(f);});
-        const small=document.createElement('div');small.className='hint';small.textContent=`Baris Excel: ${index+2}`;card.append(grid,small);$('results').appendChild(card);
-      });
+    async function lookup(code){
+      const searched=clean(code);if(!searched)return;$('manualCode').value=searched;
+      if(!activeImportId){showResultMessage('Belum ada katalog Excel online. Admin perlu mengunggah data terlebih dahulu.','warn');return;}
+      $('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent=`Mencari: ${searched}`;
+      const key=norm(searched);const queryBase=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock').eq('import_id',activeImportId);
+      try{
+        const [upcResult,articleResult]=await Promise.all([queryBase().eq('upc_norm',key),queryBase().eq('article_norm',key)]);
+        if(upcResult.error)throw upcResult.error;if(articleResult.error)throw articleResult.error;
+        const merged=new Map();[...(upcResult.data||[]),...(articleResult.data||[])].forEach(p=>merged.set(p.id,p));
+        const found=[...merged.values()].sort((a,b)=>a.row_number-b.row_number);
+        $('results').innerHTML='';$('emptyResult').hidden=true;$('resultSubtitle').textContent=`Pencarian untuk: ${searched}`;
+        if(!found.length){showResultMessage(`Barcode “${searched}” tidak ditemukan pada kolom UPC maupun Article.`,'error');return;}
+        const heading=document.createElement('div');heading.className='result-title';heading.textContent=found.length===1?'1 data ditemukan':`${found.length} data cocok — pilih data yang benar`;$('results').appendChild(heading);
+        found.forEach(p=>{
+          const card=document.createElement('article');card.className='result-card';const h=document.createElement('h3');h.textContent=p.article_description||'(Deskripsi tidak tersedia)';card.appendChild(h);
+          const grid=document.createElement('div');grid.className='product-grid';
+          const entries=[['UPC',p.upc],['Article',p.article],['Article Description',p.article_description,'wide'],['Stock',p.stock],['Special Stock',p.special_stock]];
+          entries.forEach(([name,value,wide])=>{const f=document.createElement('div');f.className='field'+(wide?' wide':'');const s=document.createElement('span');s.textContent=name;const b=document.createElement('strong');b.textContent=value!==''?value:'—';f.append(s,b);grid.appendChild(f);});
+          const small=document.createElement('div');small.className='hint';small.textContent=`Baris Excel: ${p.row_number}`;card.append(grid,small);$('results').appendChild(card);
+        });
+      }catch(e){showResultMessage('Pencarian online gagal: '+(e.message||e)+'. Periksa koneksi internet.','error');}
     }
-    function showResultMessage(message,type){
-      $('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';
-      const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);
-    }
+    function showResultMessage(message,type){$('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);}
     $('manualForm').addEventListener('submit',e=>{e.preventDefault();lookup($('manualCode').value);});
 
     async function startCamera(){
-      clearStatus($('cameraStatus'));
-      if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
-      try{
-        stopCamera();
-        stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
-        $('video').srcObject=stream; await $('video').play();
-        $('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block'; scanning=true;
-        if('BarcodeDetector' in window){
-          let formats=[];try{formats=await BarcodeDetector.getSupportedFormats();}catch(e){}
-          const wanted=['upc_a','upc_e','ean_13','ean_8','code_128','code_39','code_93','itf','codabar','qr_code','data_matrix','pdf417','aztec'];
-          const supported=wanted.filter(f=>formats.includes(f)); detector=new BarcodeDetector(supported.length?{formats:supported}:undefined);
-          showStatus($('cameraStatus'),'ok','Kamera aktif. Arahkan barcode ke dalam bingkai.'); nativeScanLoop();
-        }else{
-          // Lazy-load ZXing as a fallback for browsers without the native Barcode Detection API.
-          await loadZXing();
-          if(!window.ZXing) throw new Error('Fitur pemindai kamera tidak tersedia di browser ini. Gunakan Chrome Android terbaru atau kolom pencarian manual.');
-          zxingReader=new ZXing.BrowserMultiFormatReader();
-          showStatus($('cameraStatus'),'ok','Kamera aktif. Sedang membaca barcode…');
-          zxingReader.decodeFromVideoElement($('video'),(result,err)=>{if(result)acceptScan(result.getText());});
-        }
+      clearStatus($('cameraStatus'));if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
+      try{stopCamera();stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});$('video').srcObject=stream;await $('video').play();$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;
+        if('BarcodeDetector'in window){let formats=[];try{formats=await BarcodeDetector.getSupportedFormats();}catch(e){}const wanted=['upc_a','upc_e','ean_13','ean_8','code_128','code_39','code_93','itf','codabar','qr_code','data_matrix','pdf417','aztec'];const supported=wanted.filter(f=>formats.includes(f));detector=new BarcodeDetector(supported.length?{formats:supported}:undefined);showStatus($('cameraStatus'),'ok','Kamera aktif. Arahkan barcode ke dalam bingkai.');nativeScanLoop();}
+        else{await loadZXing();if(!window.ZXing)throw new Error('Fitur pemindai kamera tidak tersedia. Gunakan Chrome Android terbaru atau pencarian manual.');zxingReader=new ZXing.BrowserMultiFormatReader();showStatus($('cameraStatus'),'ok','Kamera aktif. Sedang membaca barcode…');zxingReader.decodeFromVideoElement($('video'),(result,err)=>{if(result)acceptScan(result.getText());});}
         $('startCamera').disabled=true;$('stopCamera').disabled=false;
       }catch(err){stopCamera();showStatus($('cameraStatus'),'error',err.message||'Tidak dapat membuka kamera. Periksa izin kamera pada browser.');}
     }
-    function loadZXing(){
-      if(window.ZXing) return Promise.resolve();
-      return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Pustaka pemindai cadangan gagal dimuat.'));document.head.appendChild(s);});
+    function loadZXing(){if(window.ZXing)return Promise.resolve();return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Pustaka pemindai cadangan gagal dimuat.'));document.head.appendChild(s);});}
+    function nativeScanLoop(){if(!scanning||!detector)return;const step=async()=>{if(!scanning)return;if(!scanBusy&&$('video').readyState>=2){scanBusy=true;try{const codes=await detector.detect($('video'));if(codes?.length)acceptScan(codes[0].rawValue);}catch(e){}finally{scanBusy=false;}}if(scanning)scanFrame=requestAnimationFrame(step);};scanFrame=requestAnimationFrame(step);}
+    function acceptScan(value){const now=Date.now();if(!value||(value===lastRead&&now-lastReadAt<1600))return;lastRead=value;lastReadAt=now;lookup(value);if(navigator.vibrate)navigator.vibrate(70);}
+    function stopCamera(){scanning=false;if(scanFrame)cancelAnimationFrame(scanFrame);scanFrame=null;detector=null;if(zxingReader){try{zxingReader.reset();}catch(e){}zxingReader=null;}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}if($('video'))$('video').srcObject=null;if($('cameraPlaceholder'))$('cameraPlaceholder').hidden=false;if($('scanFrame'))$('scanFrame').style.display='none';if($('startCamera'))$('startCamera').disabled=false;if($('stopCamera'))$('stopCamera').disabled=true;}
+    $('startCamera').addEventListener('click',startCamera);$('stopCamera').addEventListener('click',stopCamera);window.addEventListener('pagehide',stopCamera);
+
+    async function init(){
+      if(!cfg.url||!cfg.publishableKey||!cfg.adminEmail||String(cfg.url).includes('GANTI_')||String(cfg.publishableKey).includes('GANTI_')||String(cfg.adminEmail).includes('GANTI_')){
+        showStatus($('loginStatus'),'error','Aplikasi belum dihubungkan ke Supabase. Admin perlu mengisi URL, Publishable Key, dan email Admin pada file supabase-config.js.');return;
+      }
+      if(!window.supabase?.createClient){showStatus($('loginStatus'),'error','Pustaka koneksi database gagal dimuat. Periksa internet lalu muat ulang halaman.');return;}
+      supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      const {data:{session},error}=await supabase.auth.getSession();if(error){showStatus($('loginStatus'),'error',error.message);return;}
+      supabase.auth.onAuthStateChange((event,newSession)=>{if(event==='SIGNED_OUT'||!newSession){showLoggedOut();}else if(newSession.user&&(!currentUser||currentUser.id!==newSession.user.id)){setTimeout(()=>activateUser(newSession.user),0);}});
+      if(session?.user)await activateUser(session.user);else showLoggedOut();
     }
-    function nativeScanLoop(){
-      if(!scanning||!detector) return;
-      const step=async()=>{
-        if(!scanning) return;
-        if(!scanBusy && $('video').readyState>=2){scanBusy=true;try{const codes=await detector.detect($('video'));if(codes?.length) acceptScan(codes[0].rawValue);}catch(e){}finally{scanBusy=false;}}
-        if(scanning) scanFrame=requestAnimationFrame(step);
-      }; scanFrame=requestAnimationFrame(step);
-    }
-    function acceptScan(value){
-      const now=Date.now(); if(!value || (value===lastRead&&now-lastReadAt<1600)) return;
-      lastRead=value;lastReadAt=now;lookup(value);
-      if(navigator.vibrate) navigator.vibrate(70);
-    }
-    function stopCamera(){
-      scanning=false; if(scanFrame) cancelAnimationFrame(scanFrame);scanFrame=null;detector=null;
-      if(zxingReader){try{zxingReader.reset();}catch(e){}zxingReader=null;}
-      if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-      $('video').srcObject=null;$('cameraPlaceholder').hidden=false;$('scanFrame').style.display='none';
-      $('startCamera').disabled=false;$('stopCamera').disabled=true;
-    }
-    $('startCamera').addEventListener('click',startCamera);$('stopCamera').addEventListener('click',stopCamera);
-    window.addEventListener('pagehide',stopCamera);
-    loadLocal().then(renderAdmin).catch(()=>renderAdmin());
+    init().catch(e=>showStatus($('loginStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
   })();
   </script>
 </body>
