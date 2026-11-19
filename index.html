@@ -57,21 +57,21 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .pin-error{font-size:12px;line-height:1.5;color:#a94c43;min-height:18px;margin-top:9px}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
-\n/* Tampilan pengguna: hanya scanner dan hasil pencarian. */\n#authPage,#adminPage,#appTabs,#menuToggle,#accessNotice,#pinBackdrop{display:none!important}\n</style>
+\n/* Tampilan pengguna: hanya scanner dan hasil pencarian. */\n#adminPage,#appTabs,#menuToggle,#accessNotice,#pinBackdrop{display:none!important}\n</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
 </head>
 <body>
   <header class="top"><div class="top-inner">
     <div class="header-row">
-      <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><a class="small-btn" href="./admin.html" style="text-decoration:none">Login Admin</a><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
+      <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><button class="small-btn" id="loginAdminEntry" type="button">Login Admin</button><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
     </div>
     <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab" id="resetPasswordBtn" type="button">🔐 Reset Password</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
   </div></header>
 
   <main class="app">
-    <section id="authPage" class="panel login-card">
+    <section id="authPage" class="panel login-card" hidden>
       <div class="login-brand">🔐</div>
       <div class="section-head"><div><h2>Masuk ke Barcode Scanner</h2><p>Gunakan akun yang sama di PC dan HP agar semuanya membaca data Excel dari tempat yang sama.</p></div></div>
       <div class="form-grid">
@@ -275,12 +275,24 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     }
     async function signIn(){
       const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
-      if(!email||!password){showStatus($('loginStatus'),'warn','Masukkan email dan password akun aplikasi.');return;}
-      $('loginBtn').disabled=true;showStatus($('loginStatus'),'info','Sedang masuk…');
-      try{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;clearStatus($('loginStatus'));}
-      catch(e){showStatus($('loginStatus'),'error',e.message||'Login gagal. Periksa email dan password.');}
+      if(!email||!password){showStatus($('loginStatus'),'warn','Masukkan email dan password Admin.');return;}
+      $('loginBtn').disabled=true;showStatus($('loginStatus'),'info','Memeriksa akun Admin…');
+      try{
+        const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;
+        const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();
+        if(!adminEmail||String(data.user?.email||'').trim().toLowerCase()!==adminEmail){
+          await supabase.auth.signOut();
+          throw new Error('Akun ini bukan akun Admin.');
+        }
+        clearStatus($('loginStatus'));
+        window.location.href='./admin.html';
+      }catch(e){showStatus($('loginStatus'),'error',e.message||'Login gagal. Periksa email dan password.');}
       finally{$('loginBtn').disabled=false;}
     }
+    $('loginAdminEntry').addEventListener('click',()=>{
+      $('authPage').hidden=!$('authPage').hidden;
+      if(!$('authPage').hidden){$('loginEmail').focus();$('authPage').scrollIntoView({behavior:'smooth',block:'center'});}
+    });
     $('loginBtn').addEventListener('click',signIn);
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
     $('logoutBtn').addEventListener('click',async()=>{stopCamera();const {error}=await supabase.auth.signOut();if(error)showStatus($('cameraStatus'),'error',error.message);else showLoggedOut('Anda sudah keluar.');});
@@ -450,7 +462,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       }
       if(!window.supabase?.createClient){showStatus($('catalogStatus'),'error','Pustaka koneksi database gagal dimuat. Periksa internet lalu muat ulang halaman.');return;}
       // Halaman pengguna hanya membaca katalog; tidak memakai sesi login Admin.
-      supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+      supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       await refreshCatalog();
     }
     init().catch(e=>showStatus($('catalogStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
