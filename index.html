@@ -139,7 +139,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     async function activateUser(user){
       currentUser=user;const userEmail=String(user.email||'').trim().toLowerCase();const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();isAdmin=!!adminEmail&&userEmail===adminEmail;
       $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('userTools').hidden=false;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
-      $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('accessNotice').hidden=false;$('accessNotice').textContent=isAdmin?'Akses Admin aktif. Buka Menu untuk memilih Admin Data.':'Akun aktif: '+(user.email||'(email tidak tersedia)')+'. Email ini belum cocok dengan email Admin yang dikonfigurasi: '+(cfg.adminEmail||'(belum diatur)')+'.';
+      $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('accessNotice').hidden=true;$('accessNotice').textContent='';
       if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
       await refreshCatalog();
       if(isAdmin) await detectLegacyData();
