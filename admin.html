@@ -485,7 +485,7 @@ body{
     $('googleDriveFile').value=localStorage.getItem(GOOGLE_FILE_KEY)||'';
     function extractDriveFileId(value){
       const raw=clean(value);if(!raw)return '';
-      const match=raw.match(/(?:\/file\/d\/|[?&]id=)([a-zA-Z0-9_-]{10,})/);
+      const match=raw.match(/(?:\/file\/d\/|\/spreadsheets\/d\/|[?&]id=)([a-zA-Z0-9_-]{10,})/);
       return match?match[1]:raw;
     }
     function loadGoogleIdentity(){
