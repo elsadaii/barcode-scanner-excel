@@ -137,7 +137,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     }
     async function activateUser(user){
       currentUser=user;isAdmin=!!cfg.adminEmail&&String(user.email||'').toLowerCase()===String(cfg.adminEmail).toLowerCase();
-      $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=false;$('userTools').hidden=false;
+      $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('userTools').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
       $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;
       if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
       await refreshCatalog();
