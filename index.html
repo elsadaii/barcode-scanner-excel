@@ -154,6 +154,24 @@ body{
  .login-card{padding:22px}
 }
 
+
+/* Opsi tambahan: tampilan tabel untuk hasil pencarian */
+.result-view-switch{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
+.result-view-label{font-size:11px;font-weight:800;color:#68756c;margin-right:3px}
+.result-view-option{border:1px solid #d9ded5;background:#fffefa;color:#405747;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:750;cursor:pointer}
+.result-view-option.active{background:#244f3e;border-color:#244f3e;color:#fff;box-shadow:0 3px 9px rgba(25,65,45,.14)}
+.result-table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:13px;background:#fffefa}
+.result-table{width:100%;min-width:790px;border-collapse:separate;border-spacing:0;font-size:12px;text-align:left}
+.result-table th{padding:12px 13px;background:#eef1ea;color:#405747;font-size:10px;font-weight:850;letter-spacing:.045em;text-transform:uppercase;white-space:nowrap;border-bottom:1px solid #e2e5dc}
+.result-table td{padding:11px 13px;color:#2b3d32;border-bottom:1px solid #eeece5;vertical-align:middle;line-height:1.45}
+.result-table tbody tr:last-child td{border-bottom:0}
+.result-table tbody tr:nth-child(even){background:#faf9f5}
+.result-table-description{min-width:260px;max-width:360px;white-space:normal}
+.result-table-photo{display:block;width:44px;height:44px;object-fit:contain;border:1px solid #e8e3d8;border-radius:8px;background:#f4f2ec}
+.result-table-no-photo{color:#9aa197!important;text-align:center}
+.result-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;color:#68756c;font-size:11px;font-weight:700}
+.result-pagination-controls{display:flex;gap:7px}
+.result-pagination-controls .btn{margin:0;padding:8px 12px;font-size:11px}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
@@ -235,12 +253,13 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.1.4';
+    const APP_VERSION = '1.1.5';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
     let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null;
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
+    let resultViewMode='cards', currentFoundResults=[], currentResultPage=0;
     const clean = v => v == null ? '' : String(v).trim();
     const norm = v => clean(v).toLocaleUpperCase('en-US');
     const PIN_HASH_KEY='barcode_db_pin_hash_v2',PIN_TRIES_KEY='barcode_db_pin_tries_v2',PIN_LOCK_KEY='barcode_db_pin_lock_until_v2';
@@ -533,16 +552,174 @@ body{
         $('results').innerHTML='';$('emptyResult').hidden=true;$('resultSubtitle').textContent=`Pencarian untuk: ${searched}`;
         if(!found.length){showResultMessage(`Barang dengan UPC, Article, atau Article Description “${searched}” tidak ditemukan.`,'error');return;}
         const heading=document.createElement('div');heading.className='result-title';heading.textContent=found.length===1?'1 data ditemukan':`${found.length} data cocok — pilih data yang benar`;$('results').appendChild(heading);
-        found.forEach(p=>{
-          const card=document.createElement('article');card.className='result-card';const h=document.createElement('h3');h.textContent=p.article_description||'(Deskripsi tidak tersedia)';card.appendChild(h);if(p.image_path){const photo=document.createElement('img');photo.className='product-photo';photo.alt='Foto produk';photo.loading='lazy';photo.src=supabase.storage.from('barcode-product-images').getPublicUrl(p.image_path).data.publicUrl;card.appendChild(photo);}
-          const grid=document.createElement('div');grid.className='product-grid';
-          const entries=[['UPC',p.upc],['Article',p.article],['Article Description',p.article_description,'wide'],['Stock',p.stock],['Special Stock',p.special_stock]];
-          entries.forEach(([name,value,wide])=>{const f=document.createElement('div');f.className='field'+(wide?' wide':'');const s=document.createElement('span');s.textContent=name;const b=document.createElement('strong');b.textContent=value!==''?value:'—';f.append(s,b);grid.appendChild(f);});
-          card.append(grid);$('results').appendChild(card);
-        });
+        currentFoundResults=found;
+        currentResultPage=0;
+        renderFoundResults();
         revealResults();
       }catch(e){showResultMessage('Pencarian online gagal: '+(e.message||e)+'. Periksa koneksi internet.','error');}
     }
+    function renderFoundResults(){
+      const target=$('results');
+      target.innerHTML='';
+      const found=currentFoundResults;
+      if(!found.length)return;
+
+      const heading=document.createElement('div');
+      heading.className='result-title';
+      heading.textContent=found.length===1?'1 data ditemukan':found.length+' data cocok — pilih data yang benar';
+      target.appendChild(heading);
+
+      if(found.length>1){
+        const switcher=document.createElement('div');
+        switcher.className='result-view-switch';
+        const label=document.createElement('span');
+        label.className='result-view-label';
+        label.textContent='Tampilan hasil';
+        switcher.appendChild(label);
+        [
+          {mode:'cards',text:'Kartu'},
+          {mode:'table',text:'Tabel'}
+        ].forEach(option=>{
+          const button=document.createElement('button');
+          button.type='button';
+          button.className='result-view-option'+(resultViewMode===option.mode?' active':'');
+          button.textContent=option.text;
+          button.setAttribute('aria-pressed',String(resultViewMode===option.mode));
+          button.addEventListener('click',()=>{
+            if(resultViewMode===option.mode)return;
+            resultViewMode=option.mode;
+            currentResultPage=0;
+            renderFoundResults();
+          });
+          switcher.appendChild(button);
+        });
+        target.appendChild(switcher);
+      }
+
+      if(resultViewMode==='table'&&found.length>1){
+        renderResultTable(target,found);
+        return;
+      }
+
+      found.forEach(p=>{
+        const card=document.createElement('article');
+        card.className='result-card';
+        const h=document.createElement('h3');
+        h.textContent=p.article_description||'(Deskripsi tidak tersedia)';
+        card.appendChild(h);
+        if(p.image_path){
+          const photo=document.createElement('img');
+          photo.className='product-photo';
+          photo.alt='Foto produk';
+          photo.loading='lazy';
+          photo.src=supabase.storage.from('barcode-product-images').getPublicUrl(p.image_path).data.publicUrl;
+          card.appendChild(photo);
+        }
+        const grid=document.createElement('div');
+        grid.className='product-grid';
+        const entries=[['UPC',p.upc],['Article',p.article],['Article Description',p.article_description,'wide'],['Stock',p.stock],['Special Stock',p.special_stock]];
+        entries.forEach(([name,value,wide])=>{
+          const field=document.createElement('div');
+          field.className='field'+(wide?' wide':'');
+          const fieldLabel=document.createElement('span');
+          fieldLabel.textContent=name;
+          const fieldValue=document.createElement('strong');
+          fieldValue.textContent=value!==''&&value!=null?String(value):'—';
+          field.append(fieldLabel,fieldValue);
+          grid.appendChild(field);
+        });
+        card.append(grid);
+        target.appendChild(card);
+      });
+    }
+
+    function renderResultTable(target,found){
+      const pageSize=10;
+      const totalPages=Math.max(1,Math.ceil(found.length/pageSize));
+      currentResultPage=Math.min(Math.max(0,currentResultPage),totalPages-1);
+      const start=currentResultPage*pageSize;
+      const pageItems=found.slice(start,start+pageSize);
+      const wrap=document.createElement('div');
+      wrap.className='result-table-wrap';
+      const table=document.createElement('table');
+      table.className='result-table';
+      const thead=document.createElement('thead');
+      const headerRow=document.createElement('tr');
+      ['Foto','UPC','Article','Article Description','Stock','Special Stock'].forEach(name=>{
+        const th=document.createElement('th');
+        th.scope='col';
+        th.textContent=name;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      const tbody=document.createElement('tbody');
+      pageItems.forEach(product=>{
+        const row=document.createElement('tr');
+        const photoCell=document.createElement('td');
+        if(product.image_path){
+          const photo=document.createElement('img');
+          photo.className='result-table-photo';
+          photo.alt='Foto produk';
+          photo.loading='lazy';
+          photo.src=supabase.storage.from('barcode-product-images').getPublicUrl(product.image_path).data.publicUrl;
+          photoCell.appendChild(photo);
+        }else{
+          photoCell.textContent='—';
+          photoCell.className='result-table-no-photo';
+        }
+        row.appendChild(photoCell);
+        [
+          product.upc,
+          product.article,
+          product.article_description,
+          product.stock,
+          product.special_stock
+        ].forEach((value,index)=>{
+          const cell=document.createElement('td');
+          cell.textContent=value!==''&&value!=null?String(value):'—';
+          if(index===2)cell.className='result-table-description';
+          row.appendChild(cell);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      target.appendChild(wrap);
+
+      const pagination=document.createElement('div');
+      pagination.className='result-pagination';
+      const info=document.createElement('span');
+      const end=Math.min(start+pageSize,found.length);
+      info.textContent='Menampilkan '+(start+1)+'–'+end+' dari '+found.length+' hasil';
+      pagination.appendChild(info);
+      if(totalPages>1){
+        const controls=document.createElement('div');
+        controls.className='result-pagination-controls';
+        const previous=document.createElement('button');
+        previous.type='button';
+        previous.className='btn light';
+        previous.textContent='Sebelumnya';
+        previous.disabled=currentResultPage===0;
+        previous.addEventListener('click',()=>{
+          currentResultPage--;
+          renderFoundResults();
+        });
+        const next=document.createElement('button');
+        next.type='button';
+        next.className='btn light';
+        next.textContent='Berikutnya';
+        next.disabled=currentResultPage>=totalPages-1;
+        next.addEventListener('click',()=>{
+          currentResultPage++;
+          renderFoundResults();
+        });
+        controls.append(previous,next);
+        pagination.appendChild(controls);
+      }
+      target.appendChild(pagination);
+    }
+
     function revealResults(){const panel=$('resultsPanel');if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});}
     function showResultMessage(message,type){$('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);revealResults();}
     $('manualForm').addEventListener('submit',e=>{e.preventDefault();lookup($('manualCode').value);});
