@@ -540,7 +540,7 @@ body{
     }));
 
     async function lookup(code){
-      const searched=clean(code);if(!searched)return;$('manualCode').value=searched;
+      const searched=clean(code);if(!searched)return;currentFoundResults=[];currentResultPage=0;$('manualCode').value=searched;
       if(!activeImportId){showResultMessage('Server sedang Offline.','warn');return;}
       $('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent=`Mencari: ${searched}`;
       const key=norm(searched);const queryBase=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock,image_path').eq('import_id',activeImportId);
@@ -721,7 +721,7 @@ body{
     }
 
     function revealResults(){const panel=$('resultsPanel');if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});}
-    function showResultMessage(message,type){$('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);revealResults();}
+    function showResultMessage(message,type){currentFoundResults=[];currentResultPage=0;$('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);revealResults();}
     $('manualForm').addEventListener('submit',e=>{e.preventDefault();lookup($('manualCode').value);});
 
     async function startCamera(){
