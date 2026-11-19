@@ -444,6 +444,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     $('startCamera').addEventListener('click',startCamera);$('stopCamera').addEventListener('click',stopCamera);window.addEventListener('pagehide',stopCamera);
 
     async function init(){
+      $('appContent').hidden=false;$('scannerPage').hidden=false;
       if(!cfg.url||!cfg.publishableKey||String(cfg.url).includes('GANTI_')||String(cfg.publishableKey).includes('GANTI_')){
         showStatus($('catalogStatus'),'error','Aplikasi belum dihubungkan ke database. Periksa supabase-config.js.');return;
       }
