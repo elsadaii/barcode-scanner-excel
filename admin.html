@@ -881,6 +881,7 @@ body{
       const oldId=activeImportId||latestImportId;if(!oldId){showStatus($('uploadStatus'),'info','Belum ada katalog tersimpan.');return;}
       if(!confirm('Hapus katalog Excel online? Semua perangkat akan kehilangan data pencarian sampai Admin mengunggah file baru.'))return;
       try{
+        if(activeImportId)await createCatalogBackup('sebelum hapus katalog');
         const {error:stateError}=await supabase.from('barcode_catalog_state').delete().eq('singleton',true);if(stateError)throw stateError;
         const {error:deleteError}=await supabase.from('barcode_imports').delete().eq('id',oldId);if(deleteError)throw deleteError;
         activeImportId=null;latestImportId=null;await refreshCatalog();showStatus($('uploadStatus'),'ok','Katalog online sudah dihapus.');
