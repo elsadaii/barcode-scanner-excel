@@ -400,12 +400,12 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       $('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent=`Mencari: ${searched}`;
       const key=norm(searched);const queryBase=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock').eq('import_id',activeImportId);
       try{
-        const [upcResult,articleResult]=await Promise.all([queryBase().eq('upc_norm',key),queryBase().eq('article_norm',key)]);
-        if(upcResult.error)throw upcResult.error;if(articleResult.error)throw articleResult.error;
-        const merged=new Map();[...(upcResult.data||[]),...(articleResult.data||[])].forEach(p=>merged.set(p.id,p));
+        const [upcResult,articleResult,descriptionResult]=await Promise.all([queryBase().eq('upc_norm',key),queryBase().eq('article_norm',key),queryBase().ilike('article_description',`%${searched}%`)]);
+        if(upcResult.error)throw upcResult.error;if(articleResult.error)throw articleResult.error;if(descriptionResult.error)throw descriptionResult.error;
+        const merged=new Map();[...(upcResult.data||[]),...(articleResult.data||[]),...(descriptionResult.data||[])].forEach(p=>merged.set(p.id,p));
         const found=[...merged.values()].sort((a,b)=>a.row_number-b.row_number);
         $('results').innerHTML='';$('emptyResult').hidden=true;$('resultSubtitle').textContent=`Pencarian untuk: ${searched}`;
-        if(!found.length){showResultMessage(`Barcode “${searched}” tidak ditemukan pada kolom UPC maupun Article.`,'error');return;}
+        if(!found.length){showResultMessage(`Barang dengan UPC, Article, atau Article Description “${searched}” tidak ditemukan.`,'error');return;}
         const heading=document.createElement('div');heading.className='result-title';heading.textContent=found.length===1?'1 data ditemukan':`${found.length} data cocok — pilih data yang benar`;$('results').appendChild(heading);
         found.forEach(p=>{
           const card=document.createElement('article');card.className='result-card';const h=document.createElement('h3');h.textContent=p.article_description||'(Deskripsi tidak tersedia)';card.appendChild(h);
