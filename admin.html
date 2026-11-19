@@ -207,7 +207,17 @@ body{
         <div class="panel">
           <div class="section-head"><div><h2>Admin — Data Excel</h2><p>Upload Excel dari PC satu kali. Perangkat lain yang login akan langsung menggunakan katalog yang sama.</p></div></div>
           <div class="file-drop"><div class="up">⇧</div><strong>Pilih file Excel</strong><p>Format: .xlsx, .xls, atau .csv.<br>Header: UPC, Article, Article Description, Stock, Special Stock.</p><input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"></div>
-          <div class="status" id="uploadStatus" role="status"></div>
+          <div class="panel" style="margin-top:16px">
+            <div class="section-head"><div><h2>Sinkronisasi Google Drive</h2><p>Simpan file Excel utama di Google Drive. Setelah Anda mengedit dan menyimpannya, tekan tombol sinkronisasi untuk memperbarui katalog.</p></div></div>
+            <div class="form-grid">
+              <div><label for="googleClientId">Google OAuth Client ID</label><input class="text-input" id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off"></div>
+              <div><label for="googleDriveFile">Link atau ID file Excel di Google Drive</label><input class="text-input" id="googleDriveFile" type="text" placeholder="Tempel link Google Drive atau ID file" autocomplete="off"></div>
+            </div>
+            <div class="actions"><button class="btn primary" id="syncGoogleDrive" type="button">☁ Sinkronkan dari Google Drive</button></div>
+            <p class="hint">Pengaturan file dan Client ID disimpan pada browser Admin ini. File harus berformat .xlsx atau .xls dan tetap privat. Saat pertama kali digunakan, Google akan meminta izin membaca file Drive Anda.</p>
+            <div class="status" id="googleDriveStatus" role="status"></div>
+          </div>
+                    <div class="status" id="uploadStatus" role="status"></div>
           <div class="progress" id="uploadProgress" hidden><div id="uploadProgressBar"></div></div>
           <div class="admin-stat"><div class="stat"><span>Total data produk aktif</span><strong id="rowCount">0</strong></div><div class="stat"><span>File aktif</span><strong id="fileState" style="font-size:14px;word-break:break-word">Belum ada</strong></div></div>
           <div><b style="font-size:13px">Kolom yang terbaca</b><div class="columns" id="columnList"><span class="chip">Belum ada file</span></div></div>
@@ -234,7 +244,7 @@ body{
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
   (() => {
     'use strict';
@@ -468,6 +478,78 @@ body{
       finally{$('excelFile').disabled=false;setTimeout(()=>{$('uploadProgress').hidden=true;$('uploadProgressBar').style.width='0%';},900);}
     }
     $('excelFile').addEventListener('change',e=>{const file=e.target.files[0];if(file)requirePin('upload',()=>handleUpload(file));else e.target.value='';});
+    const GOOGLE_CLIENT_KEY='barcode_google_oauth_client_id_v1';
+    const GOOGLE_FILE_KEY='barcode_google_drive_file_id_v1';
+    let googleTokenClient=null;
+    $('googleClientId').value=localStorage.getItem(GOOGLE_CLIENT_KEY)||'';
+    $('googleDriveFile').value=localStorage.getItem(GOOGLE_FILE_KEY)||'';
+    function extractDriveFileId(value){
+      const raw=clean(value);if(!raw)return '';
+      const match=raw.match(/(?:\/file\/d\/|[?&]id=)([a-zA-Z0-9_-]{10,})/);
+      return match?match[1]:raw;
+    }
+    function loadGoogleIdentity(){
+      return new Promise((resolve,reject)=>{
+        if(window.google?.accounts?.oauth2){resolve();return;}
+        const started=Date.now();
+        const check=()=>{if(window.google?.accounts?.oauth2){resolve();return;}if(Date.now()-started>15000){reject(new Error('Layanan login Google belum termuat. Periksa koneksi internet lalu muat ulang halaman.'));return;}setTimeout(check,250);};
+        check();
+      });
+    }
+    async function requestGoogleDriveToken(clientId){
+      await loadGoogleIdentity();
+      return new Promise((resolve,reject)=>{
+        try{
+          googleTokenClient=google.accounts.oauth2.initTokenClient({
+            client_id:clientId,
+            scope:'https://www.googleapis.com/auth/drive.readonly',
+            callback:response=>{
+              if(response.error){reject(new Error(response.error_description||response.error));return;}
+              if(!response.access_token){reject(new Error('Google tidak memberikan izin akses.'));return;}
+              resolve(response.access_token);
+            },
+            error_callback:error=>reject(new Error(error.message||'Login Google dibatalkan atau gagal.'))
+          });
+          googleTokenClient.requestAccessToken({prompt:''});
+        }catch(error){reject(error);}
+      });
+    }
+    async function syncFromGoogleDrive(){
+      if(!isAdmin)throw new Error('Hanya Admin yang dapat menyinkronkan katalog.');
+      const clientId=clean($('googleClientId').value),fileId=extractDriveFileId($('googleDriveFile').value);
+      if(!clientId||!clientId.endsWith('.apps.googleusercontent.com'))throw new Error('Masukkan Google OAuth Client ID yang valid.');
+      if(!fileId||! /^[a-zA-Z0-9_-]{10,}$/.test(fileId))throw new Error('Masukkan link atau ID file Excel Google Drive yang benar.');
+      localStorage.setItem(GOOGLE_CLIENT_KEY,clientId);localStorage.setItem(GOOGLE_FILE_KEY,fileId);
+      $('syncGoogleDrive').disabled=true;
+      try{
+        showStatus($('googleDriveStatus'),'info','Menghubungkan ke Google…');
+        const token=await requestGoogleDriveToken(clientId);
+        const metaResponse=await fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?fields=name,mimeType',{
+          headers:{Authorization:'Bearer '+token}
+        });
+        if(!metaResponse.ok){const detail=await metaResponse.text();throw new Error('Tidak dapat membaca informasi file Google Drive ('+metaResponse.status+'). '+detail.slice(0,220));}
+        const meta=await metaResponse.json();
+        if(!/\.xlsx?$/.test((meta.name||'').toLowerCase()))throw new Error('File Google Drive harus berformat .xlsx atau .xls.');
+        showStatus($('googleDriveStatus'),'info','Mengunduh “'+meta.name+'” dari Google Drive…');
+        const fileResponse=await fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?alt=media',{
+          headers:{Authorization:'Bearer '+token}
+        });
+        if(!fileResponse.ok){const detail=await fileResponse.text();throw new Error('File gagal diunduh dari Google Drive ('+fileResponse.status+'). '+detail.slice(0,220));}
+        const blob=await fileResponse.blob();
+        if(!blob.size)throw new Error('File Excel kosong.');
+        const file=new File([blob],meta.name,{type:meta.mimeType||'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        showStatus($('googleDriveStatus'),'info','Membaca dan memvalidasi isi Excel…');
+        const parsed=await readExcelFile(file);
+        await publishDataset(parsed.data,meta.name,parsed.headers);
+        showStatus($('googleDriveStatus'),'ok','Sinkronisasi berhasil. '+parsed.data.length.toLocaleString('id-ID')+' baris dari “'+meta.name+'” sudah diterapkan ke katalog.');
+      }finally{$('syncGoogleDrive').disabled=false;}
+    }
+    $('syncGoogleDrive').addEventListener('click',()=>requirePin('upload',async()=>{
+      clearStatus($('googleDriveStatus'));
+      try{await syncFromGoogleDrive();}
+      catch(error){showStatus($('googleDriveStatus'),'error',error.message||'Sinkronisasi Google Drive gagal.');}
+    }));
+
 
     function renderAdmin(){
       $('rowCount').textContent=metadata?Number(metadata.totalRows||0).toLocaleString('id-ID'):'0';
