@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.5';
+    const APP_VERSION = '1.0.6';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -508,7 +508,7 @@ body{
           const grid=document.createElement('div');grid.className='product-grid';
           const entries=[['UPC',p.upc],['Article',p.article],['Article Description',p.article_description,'wide'],['Stock',p.stock],['Special Stock',p.special_stock]];
           entries.forEach(([name,value,wide])=>{const f=document.createElement('div');f.className='field'+(wide?' wide':'');const s=document.createElement('span');s.textContent=name;const b=document.createElement('strong');b.textContent=value!==''?value:'—';f.append(s,b);grid.appendChild(f);});
-          const small=document.createElement('div');small.className='hint';small.textContent=`Baris Excel: ${p.row_number}`;card.append(grid,small);$('results').appendChild(card);
+          card.append(grid);$('results').appendChild(card);
         });
         revealResults();
       }catch(e){showResultMessage('Pencarian online gagal: '+(e.message||e)+'. Periksa koneksi internet.','error');}
