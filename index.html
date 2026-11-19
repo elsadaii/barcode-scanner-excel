@@ -273,7 +273,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 
     async function startCamera(){
       clearStatus($('cameraStatus'));if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
-      try{stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});const videoTrack=stream.getVideoTracks()[0];if(videoTrack)await enableCameraFocus(videoTrack);$('video').srcObject=stream;await $('video').play();$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;
+      try{stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},focusMode:{ideal:'continuous'}}});const videoTrack=stream.getVideoTracks()[0];if(videoTrack)await enableCameraFocus(videoTrack);$('video').srcObject=stream;await $('video').play();$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;
         if('BarcodeDetector'in window){let formats=[];try{formats=await BarcodeDetector.getSupportedFormats();}catch(e){}const wanted=['upc_a','upc_e','ean_13','ean_8','code_128','code_39','code_93','itf','codabar','qr_code','data_matrix','pdf417','aztec'];const supported=wanted.filter(f=>formats.includes(f));detector=new BarcodeDetector(supported.length?{formats:supported}:undefined);showStatus($('cameraStatus'),'ok','Kamera aktif. Arahkan barcode ke dalam bingkai.');nativeScanLoop();}
         else{await loadZXing();if(!window.ZXing)throw new Error('Fitur pemindai kamera tidak tersedia. Gunakan Chrome Android terbaru atau pencarian manual.');zxingReader=new ZXing.BrowserMultiFormatReader();showStatus($('cameraStatus'),'ok','Kamera aktif. Sedang membaca barcode…');zxingReader.decodeFromVideoElement($('video'),(result,err)=>{if(result)acceptScan(result.getText());else if(err&&/NotFoundException/.test(err.name||err.constructor?.name||''))lastRead='';});}
         $('startCamera').disabled=true;$('stopCamera').disabled=false;
@@ -287,7 +287,10 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
         if(Array.isArray(caps.exposureMode)&&caps.exposureMode.includes('continuous'))advanced.exposureMode='continuous';
         if(Array.isArray(caps.whiteBalanceMode)&&caps.whiteBalanceMode.includes('continuous'))advanced.whiteBalanceMode='continuous';
         if(Object.keys(advanced).length&&track.applyConstraints)await track.applyConstraints({advanced:[advanced]});
-      }catch(e){/* Perangkat yang tidak menyediakan kontrol fokus tetap memakai autofocus bawaan kamera. */}
+        if(track.applyConstraints&&Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous')){
+          await track.applyConstraints({focusMode:{ideal:'continuous'}});
+        }
+      }catch(e){/* Jika kontrol fokus manual tidak didukung, kamera tetap memakai autofocus bawaan. */}
     }
     function loadZXing(){if(window.ZXing)return Promise.resolve();return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Pustaka pemindai cadangan gagal dimuat.'));document.head.appendChild(s);});}
     function nativeScanLoop(){if(!scanning||!detector)return;const step=async()=>{if(!scanning)return;if(!scanBusy&&$('video').readyState>=2){scanBusy=true;try{const codes=await detector.detect($('video'));if(codes?.length)acceptScan(codes[0].rawValue);else if(Date.now()-lastReadAt>900)lastRead='';}catch(e){}finally{scanBusy=false;}}if(scanning)scanFrame=requestAnimationFrame(step);};scanFrame=requestAnimationFrame(step);}
