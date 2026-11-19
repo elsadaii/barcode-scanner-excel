@@ -176,6 +176,7 @@ body{
         <div><label for="loginPassword">Password</label><input class="text-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password akun"></div>
       </div>
       <button class="btn primary" id="loginBtn" type="button">Masuk</button>
+      <button class="btn light" id="forgotPasswordLoginBtn" type="button">🔐 Lupa / Reset Password</button>
       <button class="btn light" id="backToScannerBtn" type="button">← Kembali ke Halaman Scanner</button>
       <div class="status" id="loginStatus" role="status"></div>
       
@@ -234,7 +235,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.1.1';
+    const APP_VERSION = '1.1.2';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -404,6 +405,17 @@ body{
       $('adminPage').hidden=true;
       $('loginAdminEntry').focus();
       window.scrollTo({top:0,behavior:'smooth'});
+    });
+    $('forgotPasswordLoginBtn').addEventListener('click',async()=>{
+      const email=String($('loginEmail').value||'').trim();
+      if(!email){showStatus($('loginStatus'),'warn','Masukkan alamat email Admin terlebih dahulu.');$('loginEmail').focus();return;}
+      $('forgotPasswordLoginBtn').disabled=true;
+      try{
+        const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+        if(error)throw error;
+        showStatus($('loginStatus'),'ok','Jika email terdaftar, tautan reset password akan dikirim ke '+email+'. Periksa kotak masuk dan folder Spam.');
+      }catch(e){showStatus($('loginStatus'),'error','Gagal mengirim tautan reset password: '+(e.message||e));}
+      finally{$('forgotPasswordLoginBtn').disabled=false;}
     });
     $('loginBtn').addEventListener('click',signIn);
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
