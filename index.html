@@ -66,7 +66,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     <div class="header-row">
       <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
     </div>
-    <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
+    <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab" id="resetPasswordBtn" type="button">🔐 Reset Password</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
   </div></header>
 
@@ -147,11 +147,11 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     const PIN_HASH_KEY='barcode_db_pin_hash_v2',PIN_TRIES_KEY='barcode_db_pin_tries_v2';
     let pinUnlocked=false,pinMode='verify',pinResolve=null,pinAction=null;
     const pinHash=async value=>{const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');};
-    function openPinDialog(action){
+    function openPinDialog(action,forceMode){
       return new Promise(resolve=>{
         pinResolve=resolve;pinAction=action;
         const exists=!!localStorage.getItem(PIN_HASH_KEY),tries=Number(localStorage.getItem(PIN_TRIES_KEY)||0);
-        pinMode=exists?'verify':'create';
+        pinMode=forceMode||(exists?'verify':'create');
         $('pinTitle').textContent=pinMode==='create'?'Buat PIN Database':'Verifikasi PIN Database';
         $('pinDescription').textContent=pinMode==='create'?'Buat PIN 6 digit. PIN ini diminta sebelum database diubah.':'Masukkan PIN 6 digit untuk melanjutkan perubahan database.';
         $('pinConfirmWrap').hidden=pinMode!=='create';$('pinSubmit').textContent=pinMode==='create'?'Simpan PIN':'Verifikasi PIN';
@@ -205,6 +205,27 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       }catch(e){$('pinError').textContent='Database gagal dihapus: '+(e.message||e);}
       finally{$('pinReset').disabled=false;}
     });
+    async function changeDatabasePin(){
+      if(!isAdmin)return;
+      const hasPin=!!localStorage.getItem(PIN_HASH_KEY);
+      if(hasPin){
+        const verified=await openPinDialog('change-pin-current','verify');
+        if(!verified)return;
+      }
+      const created=await openPinDialog('change-pin-new','create');
+      if(created){showStatus($('uploadStatus'),'ok','PIN Database berhasil diperbarui. Database tetap aman dan tidak dihapus.');}
+    }
+    $('changePinBtn').addEventListener('click',()=>{closeMenu();changeDatabasePin();});
+    $('resetPasswordBtn').addEventListener('click',async()=>{
+      closeMenu();
+      const email=String(currentUser?.email||'').trim();
+      if(!email){showStatus($('loginStatus'),'error','Email akun tidak ditemukan.');return;}
+      try{
+        const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+        if(error)throw error;
+        showStatus($('cameraStatus'),'ok','Tautan reset password telah dikirim ke '+email+'. Periksa kotak masuk dan folder Spam.');
+      }catch(e){showStatus($('cameraStatus'),'error','Gagal mengirim tautan reset password: '+(e.message||e));}
+    });
     async function requirePin(action,callback){
       if(!isAdmin){showStatus($('uploadStatus'),'error','Hanya Admin yang dapat mengubah database.');return;}
       const ok=await openPinDialog(action);if(!ok)return;
@@ -229,7 +250,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     async function activateUser(user){
       currentUser=user;const userEmail=String(user.email||'').trim().toLowerCase();const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();isAdmin=!!adminEmail&&userEmail===adminEmail;
       $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
-      $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('accessNotice').hidden=true;$('accessNotice').textContent='';
+      $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('changePinBtn').hidden=!isAdmin;$('accessNotice').hidden=true;$('accessNotice').textContent='';
       if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
       await refreshCatalog();
       if(isAdmin) await detectLegacyData();
@@ -411,7 +432,21 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       if(!window.supabase?.createClient){showStatus($('loginStatus'),'error','Pustaka koneksi database gagal dimuat. Periksa internet lalu muat ulang halaman.');return;}
       supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       const {data:{session},error}=await supabase.auth.getSession();if(error){showStatus($('loginStatus'),'error',error.message);return;}
-      supabase.auth.onAuthStateChange((event,newSession)=>{if(event==='SIGNED_OUT'||!newSession){showLoggedOut();}else if(newSession.user&&(!currentUser||currentUser.id!==newSession.user.id)){setTimeout(()=>activateUser(newSession.user),0);}});
+      supabase.auth.onAuthStateChange((event,newSession)=>{
+        if(event==='SIGNED_OUT'||!newSession){showLoggedOut();}
+        else if(event==='PASSWORD_RECOVERY'){
+          setTimeout(async()=>{
+            const next=window.prompt('Masukkan password baru (minimal 6 karakter):');
+            if(next===null)return;
+            if(next.length<6){showStatus($('loginStatus'),'error','Password minimal 6 karakter. Buka kembali tautan email untuk mencoba lagi.');return;}
+            const confirmNext=window.prompt('Ulangi password baru:');
+            if(confirmNext!==next){showStatus($('loginStatus'),'error','Konfirmasi password tidak sama. Buka kembali tautan email untuk mencoba lagi.');return;}
+            const {error}=await supabase.auth.updateUser({password:next});
+            if(error)showStatus($('loginStatus'),'error','Password gagal diperbarui: '+error.message);
+            else showStatus($('cameraStatus'),'ok','Password akun berhasil diperbarui.');
+          },300);
+        }else if(newSession.user&&(!currentUser||currentUser.id!==newSession.user.id)){setTimeout(()=>activateUser(newSession.user),0);}
+      });
       if(session?.user)await activateUser(session.user);else showLoggedOut();
     }
     init().catch(e=>showStatus($('loginStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
