@@ -399,13 +399,13 @@ body{
         const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
         if(stateError)throw stateError;
         activeImportId=state?.active_import_id||null;
-        if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn','Database belum tersedia. Admin perlu mengunggah file Excel dari menu Admin Data.');renderAdmin();return;}
+        if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn',`Database: Offline · Last Update: — · Version: ${APP_VERSION}`);renderAdmin();return;}
         const {data:info,error:infoError}=await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single();
         if(infoError)throw infoError;
         metadata={fileName:info.file_name,uploadedAt:info.uploaded_at,headers:info.headers||[],totalRows:info.total_rows};
-        const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Database: Last update ${uploadDateLabel}${uploadTimeLabel?', pukul '+uploadTimeLabel+' WIB':''} · Version: ${APP_VERSION}`);
+        const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Database: Online · Last Update: ${uploadDateLabel}${uploadTimeLabel?', pukul '+uploadTimeLabel+' WIB':''} · Version: ${APP_VERSION}`);
         renderAdmin();
-      }catch(e){showStatus($('catalogStatus'),'error','Gagal mengambil database: '+(e.message||e));}
+      }catch(e){metadata=null;products=[];activeImportId=null;showStatus($('catalogStatus'),'error',`Database: Offline · Last Update: — · Version: ${APP_VERSION}`);}
     }
 
     function parseCSV(text){
