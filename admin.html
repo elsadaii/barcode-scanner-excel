@@ -496,7 +496,14 @@ body{
         check();
       });
     }
+    // Token Google disimpan sementara di memori halaman agar setiap edit tidak meminta izin ulang.
+    // Token tidak disimpan ke localStorage/sessionStorage demi keamanan.
+    let googleAccessToken='';
+    let googleAccessTokenExpiresAt=0;
+    let googleAccessTokenClientId='';
     async function requestGoogleDriveToken(clientId){
+      const now=Date.now();
+      if(googleAccessToken&&googleAccessTokenClientId===clientId&&googleAccessTokenExpiresAt>now+60000)return googleAccessToken;
       await loadGoogleIdentity();
       return new Promise((resolve,reject)=>{
         try{
@@ -504,12 +511,20 @@ body{
             client_id:clientId,
             scope:'https://www.googleapis.com/auth/drive',
             callback:response=>{
-              if(response.error){reject(new Error(response.error_description||response.error));return;}
+              if(response.error){
+                googleAccessToken='';googleAccessTokenExpiresAt=0;googleAccessTokenClientId='';
+                reject(new Error(response.error_description||response.error));return;
+              }
               if(!response.access_token){reject(new Error('Google tidak memberikan izin akses.'));return;}
-              resolve(response.access_token);
+              googleAccessToken=response.access_token;
+              googleAccessTokenClientId=clientId;
+              googleAccessTokenExpiresAt=Date.now()+(Math.max(60,Number(response.expires_in)||3600)*1000);
+              resolve(googleAccessToken);
             },
             error_callback:error=>reject(new Error(error.message||'Login Google dibatalkan atau gagal.'))
           });
+          // Karena persetujuan telah diberikan sebelumnya, Google dapat mengeluarkan token
+          // tanpa menampilkan dialog persetujuan lagi.
           googleTokenClient.requestAccessToken({prompt:''});
         }catch(error){reject(error);}
       });
