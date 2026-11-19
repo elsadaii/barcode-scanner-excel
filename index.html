@@ -284,14 +284,19 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       try{
         const caps=track.getCapabilities?track.getCapabilities():{};
         const advanced={};
-        if(Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.focusMode='continuous';
+        // Picu fokus cepat sekali saat kamera mulai, lalu kembalikan ke autofocus kontinu.
+        const canSingleShot=Array.isArray(caps.focusMode)&&caps.focusMode.includes('single-shot');
+        if(!canSingleShot&&Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.focusMode='continuous';
         if(Array.isArray(caps.exposureMode)&&caps.exposureMode.includes('continuous'))advanced.exposureMode='continuous';
         if(Array.isArray(caps.whiteBalanceMode)&&caps.whiteBalanceMode.includes('continuous'))advanced.whiteBalanceMode='continuous';
         // Gunakan zoom kamera moderat untuk membantu membaca barcode kecil jika didukung perangkat.
         if(caps.zoom&&Number.isFinite(caps.zoom.max)&&caps.zoom.max>caps.zoom.min){advanced.zoom=Math.min(caps.zoom.max,Math.max(caps.zoom.min,1.7));}
         if(Object.keys(advanced).length&&track.applyConstraints)await track.applyConstraints({advanced:[advanced]});
-        if(track.applyConstraints&&Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous')){
-          await track.applyConstraints({focusMode:{ideal:'continuous'}});
+        if(track.applyConstraints&&canSingleShot){
+          try{await track.applyConstraints({advanced:[{focusMode:'single-shot'}]});}catch(e){}
+          setTimeout(()=>{track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});},350);
+        }else if(track.applyConstraints&&Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous')){
+          track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
         }
       }catch(e){/* Jika kontrol fokus manual tidak didukung, kamera tetap memakai autofocus bawaan. */}
     }
