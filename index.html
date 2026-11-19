@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.4';
+    const APP_VERSION = '1.0.5';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -346,7 +346,7 @@ body{
       try{await callback();}finally{pinUnlocked=false;}
     }
 
-    function showStatus(el,type,message){el.className='status '+type;if(el.id==='catalogStatus'&&message.startsWith('Database:')){el.replaceChildren();message.split(' · ').forEach(part=>{const line=document.createElement('div');const colon=part.indexOf(':');if(colon<0){line.textContent=part;}else{const label=document.createElement('strong');label.textContent=part.slice(0,colon+1);line.append(label,document.createTextNode(part.slice(colon+1)));}el.append(line);});}else{el.textContent=message;}}
+    function showStatus(el,type,message){el.className='status '+type;if(el.id==='catalogStatus'&&message.startsWith('Server:')){el.replaceChildren();message.split(' · ').forEach(part=>{const line=document.createElement('div');const colon=part.indexOf(':');if(colon<0){line.textContent=part;}else{const label=document.createElement('strong');label.textContent=part.slice(0,colon+1);line.append(label,document.createTextNode(part.slice(colon+1)));}el.append(line);});}else{el.textContent=message;}}
     function clearStatus(el){el.className='status';el.textContent='';}
     function closeMenu(){$('appTabs').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');}
     $('menuToggle').addEventListener('click',()=>{const opening=$('appTabs').hidden;$('appTabs').hidden=!opening;$('menuToggle').setAttribute('aria-expanded',String(opening));});
@@ -399,13 +399,13 @@ body{
         const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
         if(stateError)throw stateError;
         activeImportId=state?.active_import_id||null;
-        if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn',`Server: Offline · Last Update: — · Version: ${APP_VERSION}`);renderAdmin();return;}
+        if(!state){metadata=null;products=[];showStatus($('catalogStatus'),'error',`Server: Status tidak ditemukan · Last Update: — · Version: ${APP_VERSION}`);renderAdmin();return;}if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn',`Server: Offline · Last Update: — · Version: ${APP_VERSION}`);renderAdmin();return;}
         const {data:info,error:infoError}=await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single();
         if(infoError)throw infoError;
         metadata={fileName:info.file_name,uploadedAt:info.uploaded_at,headers:info.headers||[],totalRows:info.total_rows};
         const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Server: Online · Last Update: ${uploadDateLabel}${uploadTimeLabel?', '+uploadTimeLabel+' WIB':''} · Version: ${APP_VERSION}`);
         renderAdmin();
-      }catch(e){metadata=null;products=[];activeImportId=null;showStatus($('catalogStatus'),'error',`Server: Offline · Last Update: — · Version: ${APP_VERSION}`);}
+      }catch(e){metadata=null;products=[];activeImportId=null;showStatus($('catalogStatus'),'error',`Server: Gagal diperiksa · Last Update: — · Version: ${APP_VERSION} · Detail: ${e.message||'Koneksi atau izin akses bermasalah'}`);}
     }
 
     function parseCSV(text){
