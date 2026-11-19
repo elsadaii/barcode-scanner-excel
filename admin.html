@@ -306,7 +306,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
         const {data:info,error:infoError}=await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single();
         if(infoError)throw infoError;
         metadata={fileName:info.file_name,uploadedAt:info.uploaded_at,headers:info.headers||[],totalRows:info.total_rows};
-        const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Database diperbarui: ${uploadDateLabel} · ${Number(info.total_rows||0).toLocaleString('id-ID')} data.`);
+        const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Database diperbarui pada: ${uploadDateLabel}${uploadTimeLabel?', pukul '+uploadTimeLabel+' WIB':''} · ${Number(info.total_rows||0).toLocaleString('id-ID')} data.`);
         renderAdmin();
       }catch(e){showStatus($('catalogStatus'),'error','Gagal mengambil database: '+(e.message||e));}
     }
