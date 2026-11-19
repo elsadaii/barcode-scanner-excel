@@ -286,6 +286,8 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
         if(Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.focusMode='continuous';
         if(Array.isArray(caps.exposureMode)&&caps.exposureMode.includes('continuous'))advanced.exposureMode='continuous';
         if(Array.isArray(caps.whiteBalanceMode)&&caps.whiteBalanceMode.includes('continuous'))advanced.whiteBalanceMode='continuous';
+        // Gunakan zoom kamera moderat untuk membantu membaca barcode kecil jika didukung perangkat.
+        if(caps.zoom&&Number.isFinite(caps.zoom.max)&&caps.zoom.max>caps.zoom.min){advanced.zoom=Math.min(caps.zoom.max,Math.max(caps.zoom.min,1.7));}
         if(Object.keys(advanced).length&&track.applyConstraints)await track.applyConstraints({advanced:[advanced]});
         if(track.applyConstraints&&Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous')){
           await track.applyConstraints({focusMode:{ideal:'continuous'}});
