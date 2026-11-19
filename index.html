@@ -57,14 +57,14 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .pin-error{font-size:12px;line-height:1.5;color:#a94c43;min-height:18px;margin-top:9px}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
-</style>
+\n/* Tampilan pengguna: hanya scanner dan hasil pencarian. */\n#authPage,#adminPage,#appTabs,#menuToggle,#accessNotice,#pinBackdrop{display:none!important}\n</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
 </head>
 <body>
   <header class="top"><div class="top-inner">
     <div class="header-row">
-      <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
+      <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><a class="small-btn" href="./admin.html" style="text-decoration:none">Login Admin</a><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
     </div>
     <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab" id="resetPasswordBtn" type="button">🔐 Reset Password</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
@@ -444,30 +444,15 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     $('startCamera').addEventListener('click',startCamera);$('stopCamera').addEventListener('click',stopCamera);window.addEventListener('pagehide',stopCamera);
 
     async function init(){
-      if(!cfg.url||!cfg.publishableKey||!cfg.adminEmail||String(cfg.url).includes('GANTI_')||String(cfg.publishableKey).includes('GANTI_')||String(cfg.adminEmail).includes('GANTI_')){
-        showStatus($('loginStatus'),'error','Aplikasi belum dihubungkan ke Supabase. Admin perlu mengisi URL, Publishable Key, dan email Admin pada file supabase-config.js.');return;
+      if(!cfg.url||!cfg.publishableKey||String(cfg.url).includes('GANTI_')||String(cfg.publishableKey).includes('GANTI_')){
+        showStatus($('catalogStatus'),'error','Aplikasi belum dihubungkan ke database. Periksa supabase-config.js.');return;
       }
-      if(!window.supabase?.createClient){showStatus($('loginStatus'),'error','Pustaka koneksi database gagal dimuat. Periksa internet lalu muat ulang halaman.');return;}
-      supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      const {data:{session},error}=await supabase.auth.getSession();if(error){showStatus($('loginStatus'),'error',error.message);return;}
-      supabase.auth.onAuthStateChange((event,newSession)=>{
-        if(event==='SIGNED_OUT'||!newSession){showLoggedOut();}
-        else if(event==='PASSWORD_RECOVERY'){
-          setTimeout(async()=>{
-            const next=window.prompt('Masukkan password baru (minimal 6 karakter):');
-            if(next===null)return;
-            if(next.length<6){showStatus($('loginStatus'),'error','Password minimal 6 karakter. Buka kembali tautan email untuk mencoba lagi.');return;}
-            const confirmNext=window.prompt('Ulangi password baru:');
-            if(confirmNext!==next){showStatus($('loginStatus'),'error','Konfirmasi password tidak sama. Buka kembali tautan email untuk mencoba lagi.');return;}
-            const {error}=await supabase.auth.updateUser({password:next});
-            if(error)showStatus($('loginStatus'),'error','Password gagal diperbarui: '+error.message);
-            else showStatus($('cameraStatus'),'ok','Password akun berhasil diperbarui.');
-          },300);
-        }else if(newSession.user&&(!currentUser||currentUser.id!==newSession.user.id)){setTimeout(()=>activateUser(newSession.user),0);}
-      });
-      if(session?.user)await activateUser(session.user);else showLoggedOut();
+      if(!window.supabase?.createClient){showStatus($('catalogStatus'),'error','Pustaka koneksi database gagal dimuat. Periksa internet lalu muat ulang halaman.');return;}
+      // Halaman pengguna hanya membaca katalog; tidak memakai sesi login Admin.
+      supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+      await refreshCatalog();
     }
-    init().catch(e=>showStatus($('loginStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
+    init().catch(e=>showStatus($('catalogStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
   })();
   </script>
 </body>
