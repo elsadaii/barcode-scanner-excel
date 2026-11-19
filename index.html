@@ -172,7 +172,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     }
     $('pinSubmit').addEventListener('click',async()=>{
       const pin=$('pinEntry').value;
-      if(!/^\\d{6}$/.test(pin)){$('pinError').textContent='PIN harus tepat 6 angka.';return;}
+      if(!/^\d{6}$/.test(pin)){$('pinError').textContent='PIN harus tepat 6 angka.';return;}
       try{
         if(pinMode==='create'){
           if(pin!==$('pinConfirm').value){$('pinError').textContent='Kedua PIN tidak sama.';return;}
