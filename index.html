@@ -35,7 +35,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .manual{display:flex;gap:9px;margin-top:17px}.manual input,.file-input,.text-input{width:100%;min-width:0;border:1px solid #dedbd1;border-radius:10px;padding:13px 14px;font-size:14px;background:#fffefa;color:var(--ink);transition:border-color .18s,box-shadow .18s}.manual input::placeholder,.text-input::placeholder{color:#a3aaa2}.manual input:focus,.file-input:focus,.text-input:focus{outline:none;border-color:#9eaf9d;box-shadow:0 0 0 4px rgba(44,87,71,.09)}.manual .btn{flex:0 0 auto;min-width:92px}
 .hint{font-size:12px;color:var(--muted);line-height:1.65;margin:10px 0 0}.status{padding:12px 14px;border-radius:10px;font-size:12px;margin-top:13px;display:none;line-height:1.55;border:1px solid transparent}.status.info{display:block;background:#eef3ef;color:#315a48;border-color:#dce8df}.status.ok{display:block;background:#edf5ef;color:#246342;border-color:#d7e8da}.status.warn{display:block;background:#fbf5e9;color:#89672b;border-color:#efe2c7}.status.error{display:block;background:#fbefec;color:#9e4038;border-color:#f1d9d4}
 .panel#resultsPanel{scroll-margin-top:14px}.result-title{font-weight:750;font-size:14px;letter-spacing:.01em;margin:20px 0 10px;color:#385143}.result-card{border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:11px;background:#fffefa}.result-card h3{font-family:Georgia,"Times New Roman",serif;font-size:18px;line-height:1.35;font-weight:500;color:#263b30;margin:0 0 13px}
-.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field{background:#f7f6f1;border:1px solid #efede6;border-radius:10px;padding:11px 12px;min-width:0}.field span{display:block;font-size:9px;letter-spacing:.09em;color:#828b81;font-weight:800;text-transform:uppercase;margin-bottom:6px}.field strong{font-size:13px;font-weight:650;color:#26372e;word-break:break-word;white-space:pre-wrap;line-height:1.5}.field.wide{grid-column:1/-1}
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.product-photo{display:block;width:100%;max-width:220px;max-height:220px;object-fit:contain;border-radius:12px;background:#f4f2ec;border:1px solid #e8e3d8;margin:0 0 12px}.photo-preview{display:block;width:100%;max-width:220px;max-height:220px;object-fit:contain;border-radius:12px;background:#f4f2ec;border:1px solid #e8e3d8;margin-top:9px}.photo-field{padding:12px;border:1px dashed #d6d0c2;border-radius:11px;background:#fbfaf6}.field{background:#f7f6f1;border:1px solid #efede6;border-radius:10px;padding:11px 12px;min-width:0}.field span{display:block;font-size:9px;letter-spacing:.09em;color:#828b81;font-weight:800;text-transform:uppercase;margin-bottom:6px}.field strong{font-size:13px;font-weight:650;color:#26372e;word-break:break-word;white-space:pre-wrap;line-height:1.5}.field.wide{grid-column:1/-1}
 .empty{padding:27px 16px;text-align:center;color:#899188;border:1px dashed #dcd9cf;border-radius:13px;font-size:13px;background:#fbfaf6}
 .admin-stat{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:17px 0}.stat{background:linear-gradient(145deg,#f7f6f0,#f2f1e9);border:1px solid #ebe8de;border-radius:12px;padding:15px}.stat span{display:block;color:#7d877e;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.stat strong{display:block;color:#284536;font-size:24px;font-weight:650;margin-top:6px;line-height:1.25}
 .file-drop{border:1px dashed #c9c4b5;border-radius:14px;padding:23px 18px;text-align:center;background:linear-gradient(145deg,#fbfaf6,#f5f3ec)}.file-drop .up{font-size:30px;color:#9b7a48}.file-drop strong{display:block;margin:8px 0 5px;color:#2e4437;font-size:14px}.file-drop p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.file-drop input{margin-top:15px;max-width:100%;font-size:12px}
@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.6';
+    const APP_VERSION = '1.0.7';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -494,7 +494,7 @@ body{
       const searched=clean(code);if(!searched)return;$('manualCode').value=searched;
       if(!activeImportId){showResultMessage('Server sedang Offline.','warn');return;}
       $('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent=`Mencari: ${searched}`;
-      const key=norm(searched);const queryBase=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock').eq('import_id',activeImportId);
+      const key=norm(searched);const queryBase=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock,image_path').eq('import_id',activeImportId);
       try{
         const [upcResult,articleResult,descriptionResult]=await Promise.all([queryBase().eq('upc_norm',key),queryBase().eq('article_norm',key),queryBase().ilike('article_description',`%${searched}%`)]);
         if(upcResult.error)throw upcResult.error;if(articleResult.error)throw articleResult.error;if(descriptionResult.error)throw descriptionResult.error;
@@ -504,7 +504,7 @@ body{
         if(!found.length){showResultMessage(`Barang dengan UPC, Article, atau Article Description “${searched}” tidak ditemukan.`,'error');return;}
         const heading=document.createElement('div');heading.className='result-title';heading.textContent=found.length===1?'1 data ditemukan':`${found.length} data cocok — pilih data yang benar`;$('results').appendChild(heading);
         found.forEach(p=>{
-          const card=document.createElement('article');card.className='result-card';const h=document.createElement('h3');h.textContent=p.article_description||'(Deskripsi tidak tersedia)';card.appendChild(h);
+          const card=document.createElement('article');card.className='result-card';const h=document.createElement('h3');h.textContent=p.article_description||'(Deskripsi tidak tersedia)';card.appendChild(h);if(p.image_path){const photo=document.createElement('img');photo.className='product-photo';photo.alt='Foto produk';photo.loading='lazy';photo.src=supabase.storage.from('barcode-product-images').getPublicUrl(p.image_path).data.publicUrl;card.appendChild(photo);}
           const grid=document.createElement('div');grid.className='product-grid';
           const entries=[['UPC',p.upc],['Article',p.article],['Article Description',p.article_description,'wide'],['Stock',p.stock],['Special Stock',p.special_stock]];
           entries.forEach(([name,value,wide])=>{const f=document.createElement('div');f.className='field'+(wide?' wide':'');const s=document.createElement('span');s.textContent=name;const b=document.createElement('strong');b.textContent=value!==''?value:'—';f.append(s,b);grid.appendChild(f);});
