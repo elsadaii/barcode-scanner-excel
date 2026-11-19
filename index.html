@@ -136,7 +136,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       if(message) showStatus($('loginStatus'),'info',message);
     }
     async function activateUser(user){
-      currentUser=user;isAdmin=!!cfg.adminEmail&&String(user.email||'').toLowerCase()===String(cfg.adminEmail).toLowerCase();
+      currentUser=user;const userEmail=String(user.email||'').trim().toLowerCase();const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();isAdmin=!!adminEmail&&userEmail===adminEmail;
       $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('userTools').hidden=false;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
       $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;
       if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
