@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.2';
+    const APP_VERSION = '1.0.3';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -492,7 +492,7 @@ body{
 
     async function lookup(code){
       const searched=clean(code);if(!searched)return;$('manualCode').value=searched;
-      if(!activeImportId){showResultMessage('Belum ada katalog Excel online. Admin perlu mengunggah data terlebih dahulu.','warn');return;}
+      if(!activeImportId){showResultMessage('Database sedang Offline.','warn');return;}
       $('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent=`Mencari: ${searched}`;
       const key=norm(searched);const queryBase=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock').eq('import_id',activeImportId);
       try{
