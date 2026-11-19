@@ -57,7 +57,9 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .pin-error{font-size:12px;line-height:1.5;color:#a94c43;min-height:18px;margin-top:9px}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
-\n/* Halaman admin terpisah: scanner tidak ditampilkan di sini. */\n#scannerPage{display:none!important}\n</style>
+\n/* Halaman admin terpisah: scanner tidak ditampilkan di sini. */\n#scannerPage{display:none!important}\n
+.edit-search{margin-top:14px}.edit-results{display:grid;gap:10px;margin-top:12px}.edit-item{border:1px solid var(--line);border-radius:13px;padding:14px;background:#fffefa}.edit-item h3{font-size:15px;margin:0 0 10px;color:#284536}.edit-item .product-grid{margin-bottom:10px}.edit-form{display:grid;gap:10px;margin-top:12px}.edit-form label{display:block;font-size:11px;font-weight:800;color:#68756c;text-transform:uppercase;letter-spacing:.05em}.edit-form input{width:100%;margin-top:5px;border:1px solid #dedbd1;border-radius:9px;padding:11px;background:#fffefa;color:var(--ink)}.edit-form .actions{margin:0}
+</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
 </head>
@@ -104,6 +106,8 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       </section>
 
       <section id="adminPage" hidden>
+        <div class="panel" id="editDatabasePanel"><div class="section-head"><div><h2>Edit Database</h2><p>Cari produk berdasarkan UPC, Article, atau deskripsi. Pilih Edit untuk memperbarui data produk.</p></div></div><form class="manual" id="adminSearchForm"><input id="adminSearchInput" autocomplete="off" placeholder="Cari UPC, Article, atau deskripsi…" aria-label="Cari database"><button class="btn dark" type="submit">Cari</button></form><p class="hint">Pencarian deskripsi mendukung kata atau potongan kalimat. Maksimal 50 hasil ditampilkan.</p><div class="status" id="editSearchStatus" role="status"></div><div id="editSearchResults" class="edit-results"></div></div>
+
         <div class="panel">
           <div class="section-head"><div><h2>Admin — Data Excel</h2><p>Upload Excel dari PC satu kali. Perangkat lain yang login akan langsung menggunakan katalog yang sama.</p></div></div>
           <div class="file-drop"><div class="up">⇧</div><strong>Pilih file Excel</strong><p>Format: .xlsx, .xls, atau .csv.<br>Header: UPC, Article, Article Description, Stock, Special Stock.</p><input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"></div>
@@ -371,6 +375,22 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       const list=$('columnList');list.innerHTML='';(metadata?.headers?.length?metadata.headers:[]).forEach(h=>{const s=document.createElement('span');s.className='chip';s.textContent=h;list.appendChild(s);});
       if(!list.children.length){const s=document.createElement('span');s.className='chip';s.textContent='Belum ada file';list.appendChild(s);}
     }
+
+    async function searchAdminProducts(term){
+      term=clean(term);$('editSearchResults').innerHTML='';clearStatus($('editSearchStatus'));
+      if(!term){showStatus($('editSearchStatus'),'warn','Masukkan UPC, Article, atau deskripsi untuk mencari.');return;}
+      if(!activeImportId){showStatus($('editSearchStatus'),'warn','Belum ada database aktif.');return;}
+      showStatus($('editSearchStatus'),'info','Mencari data…');
+      const base=()=>supabase.from('barcode_products').select('id,row_number,upc,article,article_description,stock,special_stock').eq('import_id',activeImportId);
+      try{const key=norm(term);const [u,a,d]=await Promise.all([base().eq('upc_norm',key),base().eq('article_norm',key),base().ilike('article_description',`%${term}%`)]);if(u.error)throw u.error;if(a.error)throw a.error;if(d.error)throw d.error;
+        const map=new Map();[...(u.data||[]),...(a.data||[]),...(d.data||[])].forEach(p=>map.set(p.id,p));const found=[...map.values()].sort((x,y)=>x.row_number-y.row_number).slice(0,50);
+        if(!found.length){showStatus($('editSearchStatus'),'warn','Data tidak ditemukan.');return;}showStatus($('editSearchStatus'),'ok',found.length+' data ditemukan'+(found.length===50?' (dibatasi 50 hasil)':''));
+        found.forEach(p=>{const card=document.createElement('article');card.className='edit-item';const title=document.createElement('h3');title.textContent=p.article_description||'(Deskripsi kosong)';card.appendChild(title);const grid=document.createElement('div');grid.className='product-grid';[['UPC',p.upc],['Article',p.article],['Stock',p.stock],['Special Stock',p.special_stock]].forEach(([label,val])=>{const f=document.createElement('div');f.className='field';const s=document.createElement('span');s.textContent=label;const b=document.createElement('strong');b.textContent=val||'—';f.append(s,b);grid.append(f);});const desc=document.createElement('div');desc.className='field wide';const ds=document.createElement('span');ds.textContent='Article Description';const db=document.createElement('strong');db.textContent=p.article_description||'—';desc.append(ds,db);grid.append(desc);card.appendChild(grid);
+          const btn=document.createElement('button');btn.type='button';btn.className='btn light';btn.textContent='✎ Edit data';btn.addEventListener('click',()=>openEditForm(card,p));card.appendChild(btn);$('editSearchResults').appendChild(card);});
+      }catch(e){showStatus($('editSearchStatus'),'error','Pencarian gagal: '+(e.message||e));}
+    }
+    function openEditForm(card,p){card.querySelector('.edit-form')?.remove();const form=document.createElement('form');form.className='edit-form';const fields=[['UPC','upc'],['Article','article'],['Article Description','article_description'],['Stock','stock'],['Special Stock','special_stock']];const inputs={};fields.forEach(([label,key])=>{const wrap=document.createElement('div');const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.value=p[key]??'';input.name=key;input.autocomplete='off';inputs[key]=input;l.appendChild(input);wrap.appendChild(l);form.appendChild(wrap);});const actions=document.createElement('div');actions.className='actions';const save=document.createElement('button');save.type='submit';save.className='btn primary';save.textContent='Simpan perubahan';const cancel=document.createElement('button');cancel.type='button';cancel.className='btn light';cancel.textContent='Batal';cancel.addEventListener('click',()=>form.remove());actions.append(save,cancel);form.appendChild(actions);form.addEventListener('submit',e=>{e.preventDefault();requirePin('edit-record',async()=>{save.disabled=true;try{const values={upc:clean(inputs.upc.value),article:clean(inputs.article.value),article_description:clean(inputs.article_description.value),stock:clean(inputs.stock.value),special_stock:clean(inputs.special_stock.value)};const {error}=await supabase.from('barcode_products').update(values).eq('id',p.id).eq('import_id',activeImportId);if(error)throw error;Object.assign(p,values);form.remove();showStatus($('editSearchStatus'),'ok','Perubahan berhasil disimpan ke database online.');searchAdminProducts($('adminSearchInput').value);}catch(err){showStatus($('editSearchStatus'),'error','Gagal menyimpan. Pastikan izin UPDATE database Supabase untuk Admin tersedia. '+(err.message||err));}finally{save.disabled=false;}});});card.appendChild(form);}
+    $('adminSearchForm').addEventListener('submit',e=>{e.preventDefault();searchAdminProducts($('adminSearchInput').value);});
     function openLegacyDB(){return new Promise(resolve=>{if(!('indexedDB'in window)){resolve(null);return;}const req=indexedDB.open('barcode-scanner-local',1);req.onsuccess=()=>{const db=req.result;if(!db.objectStoreNames.contains('app')){db.close();resolve(null);return;}const get=db.transaction('app','readonly').objectStore('app').get('dataset');get.onsuccess=()=>{const value=get.result||null;db.close();resolve(value);};get.onerror=()=>{db.close();resolve(null);};};req.onerror=()=>resolve(null);});}
     async function detectLegacyData(){
       try{const old=await openLegacyDB();if(old?.products?.length){legacyData=old;$('legacyBox').hidden=false;}else{$('legacyBox').hidden=true;}}catch(e){$('legacyBox').hidden=true;}
