@@ -645,7 +645,7 @@ body{
       table.className='result-table';
       const thead=document.createElement('thead');
       const headerRow=document.createElement('tr');
-      ['Foto','UPC','Article','Article Description','Stock','Special Stock'].forEach(name=>{
+      ['Article','Article Description','Stock','Special Stock','UPC','Foto'].forEach(name=>{
         const th=document.createElement('th');
         th.scope='col';
         th.textContent=name;
@@ -656,6 +656,18 @@ body{
       const tbody=document.createElement('tbody');
       pageItems.forEach(product=>{
         const row=document.createElement('tr');
+        [
+          product.article,
+          product.article_description,
+          product.stock,
+          product.special_stock,
+          product.upc
+        ].forEach((value,index)=>{
+          const cell=document.createElement('td');
+          cell.textContent=value!==''&&value!=null?String(value):'—';
+          if(index===1)cell.className='result-table-description';
+          row.appendChild(cell);
+        });
         const photoCell=document.createElement('td');
         if(product.image_path){
           const photo=document.createElement('img');
@@ -669,18 +681,6 @@ body{
           photoCell.className='result-table-no-photo';
         }
         row.appendChild(photoCell);
-        [
-          product.upc,
-          product.article,
-          product.article_description,
-          product.stock,
-          product.special_stock
-        ].forEach((value,index)=>{
-          const cell=document.createElement('td');
-          cell.textContent=value!==''&&value!=null?String(value):'—';
-          if(index===2)cell.className='result-table-description';
-          row.appendChild(cell);
-        });
         tbody.appendChild(row);
       });
       table.appendChild(tbody);
