@@ -214,7 +214,7 @@ body{
               <div><label for="googleDriveFile">Link atau ID file Excel di Google Drive</label><input class="text-input" id="googleDriveFile" type="text" placeholder="Tempel link Google Drive atau ID file" autocomplete="off"></div>
             </div>
             <div class="actions"><button class="btn primary" id="syncGoogleDrive" type="button">☁ Sinkronkan dari Google Drive</button></div>
-            <p class="hint">Pengaturan file dan Client ID disimpan pada browser Admin ini. File .xlsx/.xls tetap privat. Google meminta izin membaca dan memperbarui file. Setiap edit produk akan memperbarui Excel di Drive dan database online.</p>
+            <p class="hint">Client ID dan ID file Excel disimpan di database Supabase, sehingga otomatis tersedia di browser/perangkat lain saat Admin login. File .xlsx/.xls tetap privat. Google meminta izin membaca dan memperbarui file. Setiap edit produk akan memperbarui Excel di Drive dan database online.</p>
             <div class="status" id="googleDriveStatus" role="status"></div>
           </div>
                     <div class="status" id="uploadStatus" role="status"></div>
@@ -403,6 +403,8 @@ body{
       $('accessNotice').hidden=true;$('accessNotice').textContent='';
       $('adminPage').hidden=false;
       setTab('admin');
+      try{await loadGoogleDriveSettings();}
+      catch(error){showStatus($('googleDriveStatus'),'error','Gagal mengambil pengaturan Google Drive dari database: '+(error.message||error));}
       await refreshCatalog();
       await refreshBackupList();
       await detectLegacyData();
@@ -641,6 +643,52 @@ body{
     let googleTokenClient=null;
     $('googleClientId').value=localStorage.getItem(GOOGLE_CLIENT_KEY)||'';
     $('googleDriveFile').value=localStorage.getItem(GOOGLE_FILE_KEY)||'';
+    async function loadGoogleDriveSettings(){
+      const {data,error}=await supabase.from('barcode_admin_drive_settings')
+        .select('google_client_id,google_drive_file_id')
+        .eq('singleton',true).maybeSingle();
+      if(error)throw error;
+      if(data){
+        $('googleClientId').value=data.google_client_id||'';
+        $('googleDriveFile').value=data.google_drive_file_id||'';
+        localStorage.setItem(GOOGLE_CLIENT_KEY,data.google_client_id||'');
+        localStorage.setItem(GOOGLE_FILE_KEY,data.google_drive_file_id||'');
+        return;
+      }
+      const clientId=clean($('googleClientId').value);
+      const fileId=extractDriveFileId($('googleDriveFile').value);
+      if(clientId&&fileId)await saveGoogleDriveSettings(false);
+    }
+    async function saveGoogleDriveSettings(showMessage=true){
+      if(!isAdmin||!currentUser)throw new Error('Hanya Admin yang dapat menyimpan pengaturan Google Drive.');
+      const clientId=clean($('googleClientId').value);
+      const fileId=extractDriveFileId($('googleDriveFile').value);
+      if(!clientId||!clientId.endsWith('.apps.googleusercontent.com')||!fileId||! /^[a-zA-Z0-9_-]{10,}$/.test(fileId)){
+        if(showMessage)showStatus($('googleDriveStatus'),'warn','Isi Client ID dan link/ID file Excel yang valid agar dapat disimpan.');
+        return false;
+      }
+      const {error}=await supabase.from('barcode_admin_drive_settings').upsert({
+        singleton:true,google_client_id:clientId,google_drive_file_id:fileId,
+        updated_at:new Date().toISOString(),updated_by:currentUser.id
+      },{onConflict:'singleton'});
+      if(error)throw error;
+      $('googleDriveFile').value=fileId;
+      localStorage.setItem(GOOGLE_CLIENT_KEY,clientId);
+      localStorage.setItem(GOOGLE_FILE_KEY,fileId);
+      if(showMessage)showStatus($('googleDriveStatus'),'ok','Pengaturan Google Drive tersimpan di database. Akan tersedia otomatis di browser/perangkat lain saat Admin login.');
+      return true;
+    }
+    let googleSettingsSaveTimer=null;
+    function scheduleGoogleSettingsSave(){
+      clearTimeout(googleSettingsSaveTimer);
+      googleSettingsSaveTimer=setTimeout(async()=>{
+        if(!clean($('googleClientId').value)||!clean($('googleDriveFile').value))return;
+        try{await saveGoogleDriveSettings(true);}
+        catch(error){showStatus($('googleDriveStatus'),'error','Pengaturan gagal disimpan: '+(error.message||error));}
+      },350);
+    }
+    $('googleClientId').addEventListener('change',scheduleGoogleSettingsSave);
+    $('googleDriveFile').addEventListener('change',scheduleGoogleSettingsSave);
     function extractDriveFileId(value){
       const raw=clean(value);if(!raw)return '';
       const match=raw.match(/(?:\/file\/d\/|\/spreadsheets\/d\/|[?&]id=)([a-zA-Z0-9_-]{10,})/);
@@ -692,7 +740,8 @@ body{
       const clientId=clean($('googleClientId').value),fileId=extractDriveFileId($('googleDriveFile').value);
       if(!clientId||!clientId.endsWith('.apps.googleusercontent.com'))throw new Error('Masukkan Google OAuth Client ID yang valid.');
       if(!fileId||! /^[a-zA-Z0-9_-]{10,}$/.test(fileId))throw new Error('Masukkan link atau ID file Excel Google Drive yang benar.');
-      localStorage.setItem(GOOGLE_CLIENT_KEY,clientId);localStorage.setItem(GOOGLE_FILE_KEY,fileId);
+      $('googleDriveFile').value=fileId;
+      await saveGoogleDriveSettings(false);
       $('syncGoogleDrive').disabled=true;
       try{
         showStatus($('googleDriveStatus'),'info','Menghubungkan ke Google…');
