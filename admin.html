@@ -164,7 +164,7 @@ body{
     <div class="header-row">
       <div class="brand"><div class="logo">▥</div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pengelolaan database UPC dan Article</p></div><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
     </div>
-    <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab" id="resetPasswordBtn" type="button">🔐 Reset Password</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
+    <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
   </div></header>
 
@@ -177,6 +177,7 @@ body{
         <div><label for="loginPassword">Password</label><input class="text-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password akun"></div>
       </div>
       <button class="btn primary" id="loginBtn" type="button">Masuk</button>
+      <button class="small-btn" id="resetPasswordBtn" type="button" style="margin-top:10px">🔐 Lupa / Reset Password</button>
       <a class="small-btn" href="./index.html" style="display:inline-flex;align-items:center;justify-content:center;margin-top:10px;text-decoration:none">← Kembali ke Scanner Pengguna</a>
       <div class="status" id="loginStatus" role="status"></div>
       <p class="hint">Halaman ini khusus Admin. Pengguna scanner tidak perlu login.</p>
@@ -358,14 +359,15 @@ body{
     }
     $('changePinBtn').addEventListener('click',()=>{closeMenu();changeDatabasePin();});
     $('resetPasswordBtn').addEventListener('click',async()=>{
-      closeMenu();
-      const email=String(currentUser?.email||'').trim();
-      if(!email){showStatus($('loginStatus'),'error','Email akun tidak ditemukan.');return;}
+      const email=String($('loginEmail').value||'').trim();
+      if(!email){showStatus($('loginStatus'),'warn','Masukkan alamat email Admin terlebih dahulu.');$('loginEmail').focus();return;}
+      $('resetPasswordBtn').disabled=true;
       try{
         const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
         if(error)throw error;
-        showStatus($('cameraStatus'),'ok','Tautan reset password telah dikirim ke '+email+'. Periksa kotak masuk dan folder Spam.');
-      }catch(e){showStatus($('cameraStatus'),'error','Gagal mengirim tautan reset password: '+(e.message||e));}
+        showStatus($('loginStatus'),'ok','Jika email terdaftar, tautan reset password akan dikirim ke '+email+'. Periksa kotak masuk dan folder Spam.');
+      }catch(e){showStatus($('loginStatus'),'error','Gagal mengirim tautan reset password: '+(e.message||e));}
+      finally{$('resetPasswordBtn').disabled=false;}
     });
     async function requirePin(action,callback){
       if(!isAdmin){showStatus($('uploadStatus'),'error','Hanya Admin yang dapat mengubah database.');return;}
