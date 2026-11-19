@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.0';
+    const APP_VERSION = '1.0.1';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -346,7 +346,7 @@ body{
       try{await callback();}finally{pinUnlocked=false;}
     }
 
-    function showStatus(el,type,message){el.className='status '+type;if(el.id==='catalogStatus'&&message.startsWith('Database:')){el.replaceChildren();message.split(' · ').forEach((part,index)=>{if(index)el.append(document.createTextNode(' · '));const colon=part.indexOf(':');if(colon<0){el.append(document.createTextNode(part));return;}const label=document.createElement('strong');label.textContent=part.slice(0,colon+1);el.append(label,document.createTextNode(part.slice(colon+1)));});}else{el.textContent=message;}}
+    function showStatus(el,type,message){el.className='status '+type;if(el.id==='catalogStatus'&&message.startsWith('Database:')){el.replaceChildren();message.split(' · ').forEach(part=>{const line=document.createElement('div');const colon=part.indexOf(':');if(colon<0){line.textContent=part;}else{const label=document.createElement('strong');label.textContent=part.slice(0,colon+1);line.append(label,document.createTextNode(part.slice(colon+1)));}el.append(line);});}else{el.textContent=message;}}
     function clearStatus(el){el.className='status';el.textContent='';}
     function closeMenu(){$('appTabs').hidden=true;$('menuToggle').setAttribute('aria-expanded','false');}
     $('menuToggle').addEventListener('click',()=>{const opening=$('appTabs').hidden;$('appTabs').hidden=!opening;$('menuToggle').setAttribute('aria-expanded',String(opening));});
