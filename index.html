@@ -76,7 +76,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       <section id="scannerPage">
         <div class="panel">
           <div class="section-head"><div><h2>Scan barcode</h2><p>Arahkan barcode ke dalam bingkai kamera. Pencarian memakai kolom UPC <b>atau</b> Article.</p></div></div>
-          <div class="status info" id="catalogStatus" role="status">Menghubungkan ke database…</div>
+          
           <div class="camera-wrap" id="cameraWrap" hidden>
             <video id="video" autoplay muted playsinline></video>
             <div class="camera-placeholder" id="cameraPlaceholder"><div class="cam-icon">▣</div><strong>Kamera belum diaktifkan</strong><small>Tekan tombol Mulai Scan untuk membuka kamera belakang HP.</small></div>
@@ -105,8 +105,9 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
         </div>
         <div class="panel"><h2 style="font-size:16px;margin:0 0 8px">Cara kerja pencarian</h2><p class="hint" style="margin:0">Setiap barcode dicari pada kedua kolom: <b>UPC</b> dan <b>Article</b>. Salah satu boleh kosong. Jika kode cocok dengan lebih dari satu baris, semua hasil ditampilkan agar Anda dapat memilih data yang benar.</p></div>
       </section>
-    </div>
     <div class="footer">Barcode Scanner · Database UPC & Article</div>
+    <div class="status info" id="catalogStatus" role="status">Menghubungkan ke database…</div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
