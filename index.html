@@ -144,9 +144,24 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
     const clean = v => v == null ? '' : String(v).trim();
     const norm = v => clean(v).toLocaleUpperCase('en-US');
-    const PIN_HASH_KEY='barcode_db_pin_hash_v2',PIN_TRIES_KEY='barcode_db_pin_tries_v2';
+    const PIN_HASH_KEY='barcode_db_pin_hash_v2',PIN_TRIES_KEY='barcode_db_pin_tries_v2',PIN_LOCK_KEY='barcode_db_pin_lock_until_v2';
     let pinUnlocked=false,pinMode='verify',pinResolve=null,pinAction=null;
     const pinHash=async value=>{const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');};
+    let pinCooldownTimer=null;
+    function updatePinCooldownUI(){
+      const until=Number(localStorage.getItem(PIN_LOCK_KEY)||0),remaining=Math.max(0,Math.ceil((until-Date.now())/1000));
+      if(remaining>0){
+        $('pinSubmit').disabled=true;$('pinReset').disabled=true;$('pinReset').hidden=true;
+        $('pinError').textContent='Terlalu banyak percobaan. Silakan tunggu '+remaining+' detik sebelum mencoba lagi.';
+        if(!pinCooldownTimer)pinCooldownTimer=setInterval(updatePinCooldownUI,250);
+      }else{
+        if(pinCooldownTimer){clearInterval(pinCooldownTimer);pinCooldownTimer=null;}
+        if(until){localStorage.removeItem(PIN_LOCK_KEY);localStorage.removeItem(PIN_TRIES_KEY);}
+        $('pinSubmit').disabled=false;$('pinReset').disabled=false;
+        $('pinReset').hidden=!isAdmin||Number(localStorage.getItem(PIN_TRIES_KEY)||0)<5;
+        if(until)$('pinError').textContent='Waktu tunggu selesai. Silakan coba PIN kembali.';
+      }
+    }
     function openPinDialog(action,forceMode){
       return new Promise(resolve=>{
         pinResolve=resolve;pinAction=action;
@@ -155,8 +170,9 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
         $('pinTitle').textContent=pinMode==='create'?'Buat PIN Database':'Verifikasi PIN Database';
         $('pinDescription').textContent=pinMode==='create'?'Buat PIN 6 digit. PIN ini diminta sebelum database diubah.':'Masukkan PIN 6 digit untuk melanjutkan perubahan database.';
         $('pinConfirmWrap').hidden=pinMode!=='create';$('pinSubmit').textContent=pinMode==='create'?'Simpan PIN':'Verifikasi PIN';
-        $('pinReset').hidden=!isAdmin;$('pinError').textContent=tries>=5?'Akses terkunci setelah 5 kali salah. Gunakan Reset PIN untuk menghapus database dan membuat PIN baru.':'';
+        $('pinReset').hidden=!isAdmin||tries<5;$('pinError').textContent='';
         $('pinEntry').value='';$('pinConfirm').value='';$('pinBackdrop').hidden=false;
+        updatePinCooldownUI();
         setTimeout(()=>$('pinEntry').focus(),50);
       });
     }
@@ -171,6 +187,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       activeImportId=null;metadata=null;products=[];await refreshCatalog();
     }
     $('pinSubmit').addEventListener('click',async()=>{
+      const lockUntil=Number(localStorage.getItem(PIN_LOCK_KEY)||0);if(lockUntil>Date.now()){updatePinCooldownUI();return;}
       const pin=$('pinEntry').value;
       if(!/^\d{6}$/.test(pin)){$('pinError').textContent='PIN harus tepat 6 angka.';return;}
       try{
@@ -182,11 +199,11 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
           if(tries>=5){$('pinError').textContent='Akses terkunci. Reset PIN akan menghapus database.';return;}
           if(await pinHash(pin)!==localStorage.getItem(PIN_HASH_KEY)){
             const next=tries+1;localStorage.setItem(PIN_TRIES_KEY,String(next));
-            $('pinError').textContent=next>=5?'PIN salah 5 kali. Akses perubahan database dikunci.':'PIN salah. Sisa percobaan: '+(5-next)+'.';
-            if(next>=5)$('pinReset').hidden=!isAdmin;
+            if(next>=5){localStorage.setItem(PIN_LOCK_KEY,String(Date.now()+60000));updatePinCooldownUI();}
+            else $('pinError').textContent='PIN salah. Sisa percobaan: '+(5-next)+'.';
             return;
           }
-          localStorage.removeItem(PIN_TRIES_KEY);
+          localStorage.removeItem(PIN_TRIES_KEY);localStorage.removeItem(PIN_LOCK_KEY);
         }
         pinUnlocked=true;closePinDialog(true);
       }catch(e){$('pinError').textContent='PIN tidak dapat disimpan di perangkat ini.';}
@@ -194,11 +211,12 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
     $('pinCancel').addEventListener('click',()=>closePinDialog(false));
     $('pinReset').addEventListener('click',async()=>{
       if(!isAdmin){$('pinError').textContent='Hanya Admin yang dapat mereset PIN.';return;}
+      if(Number(localStorage.getItem(PIN_LOCK_KEY)||0)>Date.now()){updatePinCooldownUI();return;}
       if(!confirm('RESET PIN akan MENGHAPUS DATABASE ONLINE untuk semua perangkat. Lanjutkan?'))return;
       $('pinReset').disabled=true;
       try{
         await clearOnlineCatalogForPinReset();
-        localStorage.removeItem(PIN_HASH_KEY);localStorage.removeItem(PIN_TRIES_KEY);pinUnlocked=false;
+        localStorage.removeItem(PIN_HASH_KEY);localStorage.removeItem(PIN_TRIES_KEY);localStorage.removeItem(PIN_LOCK_KEY);pinUnlocked=false;
         pinMode='create';$('pinTitle').textContent='Buat PIN Baru';$('pinDescription').textContent='Database sudah dihapus. Buat PIN 6 digit yang baru.';
         $('pinConfirmWrap').hidden=false;$('pinSubmit').textContent='Simpan PIN Baru';$('pinEntry').value='';$('pinConfirm').value='';$('pinError').textContent='Database online sudah dihapus. Silakan buat PIN baru.';
         $('pinReset').hidden=true;
