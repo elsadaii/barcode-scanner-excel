@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.9';
+    const APP_VERSION = '1.0.10';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -386,8 +386,14 @@ body{
       finally{$('loginBtn').disabled=false;}
     }
     $('loginAdminEntry').addEventListener('click',()=>{
-      $('authPage').hidden=!$('authPage').hidden;
-      if(!$('authPage').hidden){$('loginEmail').focus();$('authPage').scrollIntoView({behavior:'smooth',block:'center'});}
+      const opening=$('authPage').hidden;
+      $('authPage').hidden=!opening;
+      $('appContent').hidden=opening;
+      if(opening){
+        stopCamera();
+        $('loginEmail').focus();
+        $('authPage').scrollIntoView({behavior:'smooth',block:'center'});
+      }
     });
     $('loginBtn').addEventListener('click',signIn);
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
