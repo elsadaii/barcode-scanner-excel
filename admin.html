@@ -383,7 +383,47 @@ body{
     document.addEventListener('click',e=>{if(!$('appTabs').hidden&&!$('appTabs').contains(e.target)&&!$('menuToggle').contains(e.target))closeMenu();});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
 
+    // Sesi Admin berakhir setelah 15 menit tanpa aktivitas.
+    const ADMIN_IDLE_TIMEOUT_MS=15*60*1000;
+    const ADMIN_ACTIVITY_KEY='barcodeAdminLastActivity';
+    let adminIdleTimer=null;
+    let lastAdminActivityWrite=0;
+    function clearAdminIdleTimer(){if(adminIdleTimer){clearTimeout(adminIdleTimer);adminIdleTimer=null;}}
+    function expireAdminSession(){
+      if(!isAdmin)return;
+      clearAdminIdleTimer();
+      try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}
+      stopCamera();
+      supabase.auth.signOut().catch(()=>{});
+      window.location.replace('./index.html?from=admin-timeout');
+    }
+    function scheduleAdminIdleTimeout(){
+      if(!isAdmin)return;
+      clearAdminIdleTimer();
+      let last=0;try{last=Number(localStorage.getItem(ADMIN_ACTIVITY_KEY)||0);}catch(e){}
+      const remaining=ADMIN_IDLE_TIMEOUT_MS-(Date.now()-last);
+      if(last&&remaining<=0){expireAdminSession();return;}
+      adminIdleTimer=setTimeout(expireAdminSession,Math.max(0,remaining));
+    }
+    function recordAdminActivity(){
+      if(!isAdmin)return;
+      const now=Date.now();
+      if(now-lastAdminActivityWrite>5000){
+        try{localStorage.setItem(ADMIN_ACTIVITY_KEY,String(now));}catch(e){}
+        lastAdminActivityWrite=now;
+      }
+      scheduleAdminIdleTimeout();
+    }
+    ['pointerdown','keydown','input','scroll','touchstart','click'].forEach(type=>{
+      document.addEventListener(type,recordAdminActivity,{capture:true,passive:true});
+    });
+    window.addEventListener('storage',event=>{
+      if(event.key===ADMIN_ACTIVITY_KEY&&isAdmin)scheduleAdminIdleTimeout();
+    });
+
     function showLoggedOut(message){
+      clearAdminIdleTimer();
+      try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}
       stopCamera();currentUser=null;isAdmin=false;activeImportId=null;products=[];metadata=null;
       $('authPage').hidden=false;$('appContent').hidden=true;$('appTabs').hidden=true;$('menuToggle').hidden=true;$('accessNotice').hidden=true;
       if(message) showStatus($('loginStatus'),'info',message);
@@ -396,7 +436,16 @@ body{
         showLoggedOut('Akun ini bukan akun Admin. Gunakan email Admin untuk masuk.');
         return;
       }
+      let previousActivity=0;try{previousActivity=Number(localStorage.getItem(ADMIN_ACTIVITY_KEY)||0);}catch(e){}
+      if(previousActivity&&Date.now()-previousActivity>=ADMIN_IDLE_TIMEOUT_MS){
+        try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}
+        await supabase.auth.signOut();
+        window.location.replace('./index.html?from=admin-timeout');
+        return;
+      }
       currentUser=user;isAdmin=true;
+      if(!previousActivity){try{localStorage.setItem(ADMIN_ACTIVITY_KEY,String(Date.now()));}catch(e){}}
+      scheduleAdminIdleTimeout();
       $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
       $('userEmail').textContent=user.email||'Admin';
       $('tabScanner').hidden=true;$('tabAdmin').hidden=false;$('changePinBtn').hidden=false;
@@ -419,7 +468,7 @@ body{
     }
     $('loginBtn').addEventListener('click',signIn);
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
-    $('logoutBtn').addEventListener('click',async()=>{stopCamera();$('logoutBtn').disabled=true;const {error}=await supabase.auth.signOut();if(error){$('logoutBtn').disabled=false;showStatus($('cameraStatus'),'error','Gagal keluar: '+error.message);return;}window.location.replace('./index.html?from=admin-logout');});
+    $('logoutBtn').addEventListener('click',async()=>{clearAdminIdleTimer();try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}stopCamera();$('logoutBtn').disabled=true;const {error}=await supabase.auth.signOut();if(error){$('logoutBtn').disabled=false;showStatus($('cameraStatus'),'error','Gagal keluar: '+error.message);return;}window.location.replace('./index.html?from=admin-logout');});
 
     async function refreshCatalog(){
       showStatus($('catalogStatus'),'info','Mengambil informasi database…');
