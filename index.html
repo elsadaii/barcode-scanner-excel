@@ -232,7 +232,7 @@ body{
   <script>
   (() => {
     'use strict';
-    const APP_VERSION = '1.0.8';
+    const APP_VERSION = '1.0.9';
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -521,7 +521,7 @@ body{
       clearStatus($('cameraStatus'));if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
       try{stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},focusMode:{ideal:'continuous'}}});const videoTrack=stream.getVideoTracks()[0];if(videoTrack)await enableCameraFocus(videoTrack);$('video').srcObject=stream;await $('video').play();$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;
         if('BarcodeDetector'in window){let formats=[];try{formats=await BarcodeDetector.getSupportedFormats();}catch(e){}const wanted=['upc_a','upc_e','ean_13','ean_8','code_128','code_39','code_93','itf','codabar','qr_code','data_matrix','pdf417','aztec'];const supported=wanted.filter(f=>formats.includes(f));detector=new BarcodeDetector(supported.length?{formats:supported}:undefined);nativeScanLoop();}
-        else{await loadZXing();if(!window.ZXing)throw new Error('Fitur pemindai kamera tidak tersedia. Gunakan Chrome Android terbaru atau pencarian manual.');zxingReader=new ZXing.BrowserMultiFormatReader();showStatus($('cameraStatus'),'ok','Kamera aktif. Sedang membaca barcode…');zxingReader.decodeFromVideoElement($('video'),(result,err)=>{if(result)acceptScan(result.getText());else if(err&&/NotFoundException/.test(err.name||err.constructor?.name||''))lastRead='';});}
+        else{await loadZXing();if(!window.ZXing)throw new Error('Fitur pemindai kamera tidak tersedia. Gunakan Chrome Android terbaru atau pencarian manual.');zxingReader=new ZXing.BrowserMultiFormatReader();clearStatus($('cameraStatus'));zxingReader.decodeFromVideoElement($('video'),(result,err)=>{if(result)acceptScan(result.getText());else if(err&&/NotFoundException/.test(err.name||err.constructor?.name||''))lastRead='';});}
         $('startCamera').disabled=true;$('stopCamera').disabled=false;
       }catch(err){stopCamera();showStatus($('cameraStatus'),'error',err.message||'Tidak dapat membuka kamera. Periksa izin kamera pada browser.');}
     }
