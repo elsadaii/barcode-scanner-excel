@@ -266,12 +266,22 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
       if(message) showStatus($('loginStatus'),'info',message);
     }
     async function activateUser(user){
-      currentUser=user;const userEmail=String(user.email||'').trim().toLowerCase();const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();isAdmin=!!adminEmail&&userEmail===adminEmail;
+      const userEmail=String(user.email||'').trim().toLowerCase();
+      const adminEmail=String(cfg.adminEmail||'').trim().toLowerCase();
+      if(!adminEmail||userEmail!==adminEmail){
+        await supabase.auth.signOut();
+        showLoggedOut('Akun ini bukan akun Admin. Gunakan email Admin untuk masuk.');
+        return;
+      }
+      currentUser=user;isAdmin=true;
       $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
-      $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('changePinBtn').hidden=!isAdmin;$('accessNotice').hidden=true;$('accessNotice').textContent='';
-      if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
+      $('userEmail').textContent=user.email||'Admin';
+      $('tabScanner').hidden=true;$('tabAdmin').hidden=false;$('changePinBtn').hidden=false;
+      $('accessNotice').hidden=true;$('accessNotice').textContent='';
+      $('adminPage').hidden=false;
+      setTab('admin');
       await refreshCatalog();
-      if(isAdmin) await detectLegacyData();
+      await detectLegacyData();
     }
     async function signIn(){
       const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
