@@ -54,8 +54,11 @@ class AppUpdater(private val activity: Activity) {
         receiverRegistered = true
     }
 
-    fun checkForUpdate() {
-        if (checking || activity.isFinishing) return
+    fun checkForUpdate(manual: Boolean = false) {
+        if (checking || activity.isFinishing) {
+            if (manual) showCheckMessage("Pemeriksaan sedang berlangsung", "Tunggu sebentar sampai pemeriksaan update selesai.")
+            return
+        }
         checking = true
         Thread {
             try {
@@ -73,15 +76,20 @@ class AppUpdater(private val activity: Activity) {
                 }
                 val body = json.optString("body")
                 val match = Regex("VELTRIX_VERSION_CODE=(\\d+)").find(body)
-                val latestCode = match?.groupValues?.get(1)?.toLongOrNull() ?: return@Thread
+                    ?: throw IllegalStateException("Informasi versi rilis tidak ditemukan.")
+                val latestCode = match.groupValues[1].toLongOrNull()
+                    ?: throw IllegalStateException("Nomor versi terbaru tidak valid.")
                 val currentCode = if (Build.VERSION.SDK_INT >= 28) {
                     activity.packageManager.getPackageInfo(activity.packageName, 0).longVersionCode
                 } else {
                     @Suppress("DEPRECATION")
                     activity.packageManager.getPackageInfo(activity.packageName, 0).versionCode.toLong()
                 }
-                if (latestCode <= currentCode) return@Thread
-                val assets = json.optJSONArray("assets") ?: return@Thread
+                if (latestCode <= currentCode) {
+                    if (manual) showCheckMessage("VELTRIX sudah terbaru", "Aplikasi Anda sudah menggunakan versi terbaru.")
+                    return@Thread
+                }
+                val assets = json.optJSONArray("assets") ?: throw IllegalStateException("File update tidak ditemukan.")
                 var apkUrl: String? = null
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
@@ -90,7 +98,7 @@ class AppUpdater(private val activity: Activity) {
                         break
                     }
                 }
-                val downloadUrl = apkUrl ?: return@Thread
+                val downloadUrl = apkUrl ?: throw IllegalStateException("File APK untuk update tidak ditemukan.")
                 val latestName = json.optString("tag_name").removePrefix("v")
                 activity.runOnUiThread {
                     if (!activity.isFinishing) {
@@ -102,12 +110,24 @@ class AppUpdater(private val activity: Activity) {
                             .show()
                     }
                 }
-            } catch (_: Exception) {
-                // Pemeriksaan update tidak boleh mengganggu fungsi utama aplikasi.
+            } catch (error: Exception) {
+                if (manual) showCheckMessage("Gagal memeriksa update", "Tidak dapat memeriksa pembaruan. Periksa koneksi internet lalu coba lagi.")
             } finally {
                 checking = false
             }
         }.start()
+    }
+
+    private fun showCheckMessage(title: String, message: String) {
+        activity.runOnUiThread {
+            if (!activity.isFinishing) {
+                AlertDialog.Builder(activity)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
     }
 
     private fun downloadUpdate(url: String, version: String) {
