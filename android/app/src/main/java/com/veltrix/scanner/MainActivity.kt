@@ -6,6 +6,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
@@ -30,6 +35,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         current = this
+        createNotificationChannel()
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7301)
+        }
         googleDriveAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode != RESULT_OK) {
                 deliverGoogleDriveResult(null, "Login Google Drive dibatalkan.")
@@ -86,6 +95,14 @@ class MainActivity : AppCompatActivity() {
                     runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                 }
             }
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel("veltrix_manual_updates", "Notifikasi VELTRIX", NotificationManager.IMPORTANCE_DEFAULT)
+            channel.description = "Notifikasi yang dikirim secara manual oleh Admin VELTRIX"
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
