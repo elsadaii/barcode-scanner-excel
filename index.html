@@ -959,7 +959,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     async function startCamera(){
       clearStatus($('cameraStatus'));
       if(window.VeltrixNativeScanner?.start){
-        stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;$('startCamera').disabled=true;$('stopCamera').disabled=false;showStatus($('cameraStatus'),'info','Membuka kamera utama Android…');window.VeltrixNativeScanner.start();return;
+        stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;$('startCamera').disabled=true;$('stopCamera').disabled=false;clearStatus($('cameraStatus'));window.VeltrixNativeScanner.start();return;
       }
       if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
       try{
