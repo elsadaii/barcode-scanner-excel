@@ -1198,7 +1198,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       async function loadNotificationHistory(markRead=false){
         const list=$('notificationList');
         list.innerHTML='<div class="notification-empty">Memuat riwayat notifikasi…</div>';
-        const {data,error}=await supabase.from('barcode_notification_history').select('id,title,body,sent_at').order('sent_at',{ascending:false}).limit(50);
+        const {data,error}=await supabase.from('barcode_notification_history').select('id,title,body,sent_at').order('sent_at',{ascending:false}).limit(5);
         if(error)throw error;
         const items=data||[];
         updateNotificationBadge(items);
