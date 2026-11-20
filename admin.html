@@ -390,7 +390,7 @@ a{color:#68bdff}
               <div><label for="googleDriveFile">Link atau ID file Excel di Google Drive</label><input class="text-input" id="googleDriveFile" type="text" placeholder="Tempel link Google Drive atau ID file" autocomplete="off"></div>
             </div>
             <div class="actions"><button class="btn primary" id="syncGoogleDrive" type="button">☁ Sinkronkan dari Google Drive</button></div>
-            <p class="hint">Client ID dan ID file Excel disimpan di database Supabase, sehingga tersedia di browser/perangkat lain saat Admin login. Saat sinkronisasi, Sheet 2 harus berisi seluruh artikel lama dan baru. Data Article Description, Stock, dan Special Stock mengikuti Sheet 2; artikel baru ditambahkan ke Sheet 1. UPC dan foto yang sudah dikelola Admin dipertahankan. Sheet 1 menjadi sumber katalog VELTRIX. Setiap edit produk tetap memperbarui Excel di Drive dan database online.</p>
+            <p class="hint">Client ID dan ID file Excel disimpan di database Supabase, sehingga tersedia di browser/perangkat lain saat Admin login. Saat sinkronisasi, Sheet 2 harus berisi seluruh artikel lama dan baru. Data Article Description, Stock, dan Special Stock mengikuti Sheet 2; artikel baru ditambahkan ke Sheet 1. UPC dan foto yang sudah dikelola Admin dipertahankan. Sheet 1 menjadi sumber katalog VELTRIX. Jika Sheet 2 memakai rumus, pastikan Excel sudah menghitung ulang dan file sudah disimpan sebelum sinkronisasi. Setiap edit produk tetap memperbarui Excel di Drive dan database online.</p>
             <div class="status" id="googleDriveStatus" role="status"></div>
           </div>
                     <div class="status" id="uploadStatus" role="status"></div>
