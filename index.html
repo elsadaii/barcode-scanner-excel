@@ -894,7 +894,7 @@ a{color:#68bdff}
       target.appendChild(pagination);
     }
 
-    function revealResults(){const panel=$('resultsPanel');if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});}
+    function revealResults(){const panel=$('resultsPanel');if(!panel)return;const rect=panel.getBoundingClientRect();const visibleHeader=110;const gap=rect.top-(window.innerHeight-visibleHeader);if(gap>0){window.scrollBy({top:Math.min(gap,180),behavior:'smooth'});}}
     function showResultMessage(message,type){currentFoundResults=[];currentResultPage=0;$('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);revealResults();}
     $('manualForm').addEventListener('submit',e=>{e.preventDefault();lookup($('manualCode').value);});
 
