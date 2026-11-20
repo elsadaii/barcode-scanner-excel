@@ -1212,14 +1212,16 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
         if(Number.isNaN(date.getTime()))return '';
         return new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(date);
       }
+      const CLEARED_NOTIFICATIONS_AT_KEY='veltrix_notification_cleared_at_v1';
       async function loadNotificationHistory(markRead=false){
         const list=$('notificationList');
         list.innerHTML='<div class="notification-empty">Memuat riwayat notifikasi…</div>';
         const {data,error}=await supabase.from('barcode_notification_history').select('id,title,body,sent_at').order('sent_at',{ascending:false}).limit(5);
         if(error)throw error;
-        const items=data||[];
+        const clearedAt=Number(localStorage.getItem(CLEARED_NOTIFICATIONS_AT_KEY)||0);
+        const items=(data||[]).filter(item=>new Date(item.sent_at).getTime()>clearedAt);
         updateNotificationBadge(items);
-        if(!items.length){list.innerHTML='<div class="notification-empty">Belum ada notifikasi.</div>';return;}
+        if(!items.length){list.innerHTML='<div class="notification-empty">Belum ada riwayat notifikasi di perangkat ini.</div>';return;}
         if(markRead){
           const read=getReadNotificationIds();items.forEach(item=>read.add(item.id));
           localStorage.setItem(READ_NOTIFICATIONS_KEY,JSON.stringify([...read].slice(-200)));
@@ -1236,34 +1238,26 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       }
       $('notificationBell').addEventListener('click',async()=>{
         renderNotificationToggle();
-        $('clearNotificationHistory').hidden=!isAdmin;
+        const clearButton=$('clearNotificationHistory');
+        clearButton.hidden=false;
+        clearButton.disabled=false;
+        clearButton.textContent='Hapus Riwayat di Perangkat Ini';
         $('notificationBackdrop').hidden=false;
         try{await loadNotificationHistory(true);}catch(error){$('notificationList').innerHTML='<div class="notification-empty">Riwayat notifikasi gagal dimuat. Periksa koneksi internet.</div>';}
       });
       $('clearNotificationHistory').addEventListener('click',async()=>{
-        if(!isAdmin){$('clearNotificationHistory').hidden=true;return;}
-        if(!window.confirm('Hapus SEMUA riwayat notifikasi dari database? Riwayat akan hilang untuk seluruh pengguna VELTRIX dan tidak dapat dipulihkan.'))return;
+        if(!window.confirm('Hapus riwayat notifikasi hanya dari perangkat ini? Riwayat di database dan perangkat lain tetap aman.'))return;
         const button=$('clearNotificationHistory');
         button.disabled=true;button.textContent='Menghapus…';
         try{
-          const {data:sessionData,error:sessionError}=await supabase.auth.getSession();
-          if(sessionError)throw sessionError;
-          const accessToken=sessionData?.session?.access_token;
-          if(!accessToken)throw new Error('Sesi Admin berakhir. Silakan login kembali.');
-          const response=await fetch(cfg.url+'/functions/v1/clear-notification-history',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','apikey':cfg.publishableKey,'Authorization':'Bearer '+accessToken},
-            body:JSON.stringify({})
-          });
-          const result=await response.json();
-          if(!response.ok||!result.ok)throw new Error(result.error||'Gagal menghapus riwayat notifikasi.');
+          localStorage.setItem(CLEARED_NOTIFICATIONS_AT_KEY,String(Date.now()));
           localStorage.removeItem(READ_NOTIFICATIONS_KEY);
           await loadNotificationHistory(false);
-          button.textContent='Riwayat Berhasil Dihapus';
+          button.textContent='Riwayat Perangkat Dihapus';
         }catch(error){
           $('notificationList').innerHTML='<div class="notification-empty"></div>';
-          $('notificationList').firstChild.textContent=error.message||'Gagal menghapus riwayat notifikasi.';
-          button.textContent='Coba Hapus Lagi';
+          $('notificationList').firstChild.textContent=error.message||'Gagal menghapus riwayat di perangkat ini.';
+          button.textContent='Coba Lagi';
         }finally{
           button.disabled=false;
         }
