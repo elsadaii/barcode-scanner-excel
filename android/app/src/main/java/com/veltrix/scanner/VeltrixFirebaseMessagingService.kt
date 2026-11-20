@@ -69,7 +69,7 @@ class VeltrixFirebaseMessagingService : FirebaseMessagingService() {
                         readTimeout = 15000
                         doOutput = true
                         setRequestProperty("Content-Type", "application/json")
-                        setRequestProperty("apikey", "sb_publishable_CHpVU5_aH5G7E53I7P-hPQ_9qoPJPHk")
+                        setRequestProperty("apikey", "sb_publishable_CHpVU5_aG5E7V53I7P-hPQ_9qoPJPHk")
                         setRequestProperty("Origin", "https://elsadaii.github.io")
                     }
                     val payload = JSONObject().put("token", token).put("platform", "android").put("action", action).toString()
