@@ -2,15 +2,19 @@ package com.veltrix.scanner
 
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class VeltrixFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Token will be registered securely with the VELTRIX notification endpoint in the next integration step.
+        registerToken(applicationContext, token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -33,6 +37,32 @@ class VeltrixFirebaseMessagingService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
-        getSystemService(NotificationManager::class.java).notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
+        getSystemService(NotificationManager::class.java)
+            .notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
+    }
+
+    companion object {
+        fun registerToken(context: Context, token: String) {
+            Thread {
+                var connection: HttpURLConnection? = null
+                try {
+                    connection = (URL("https://pjlrzwcfuoeznkkfjpey.supabase.co/functions/v1/register-push-token").openConnection() as HttpURLConnection).apply {
+                        requestMethod = "POST"
+                        connectTimeout = 15000
+                        readTimeout = 15000
+                        doOutput = true
+                        setRequestProperty("Content-Type", "application/json")
+                        setRequestProperty("apikey", "sb_publishable_CHpVU5_aG5E7V53I7P-hPQ_9qoPJPHk")
+                    }
+                    val payload = JSONObject().put("token", token).put("platform", "android").toString()
+                    connection.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
+                    connection.inputStream.close()
+                } catch (_: Exception) {
+                    // Firebase retries token delivery after a new token is issued.
+                } finally {
+                    connection?.disconnect()
+                }
+            }.start()
+        }
     }
 }
