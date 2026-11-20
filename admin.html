@@ -429,6 +429,7 @@ a{color:#68bdff}
     </div>
     <div class="footer">VELTRIX · Find. Manage. Control.</div>
     <div class="status info" id="catalogStatus" role="status">Menghubungkan ke database…</div>
+    <div class="status info" id="databaseUpdateStatus" role="status">Memeriksa pembaruan database…</div>
     </div>
   </main>
 
@@ -663,7 +664,7 @@ a{color:#68bdff}
         if(!activeImportId){products=[];showStatus($('catalogStatus'),'warn','Database sedang Offline. Aktifkan kembali agar scanner dapat membaca data.');$('toggleDatabase').disabled=false;$('toggleDatabase').textContent='Aktifkan Database';renderAdmin();return;}
         $('toggleDatabase').disabled=false;$('toggleDatabase').textContent='Jadikan Database Offline';
         if(infoError)throw infoError;
-        const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Server: Online · Last Update: ${uploadDateLabel}${uploadTimeLabel?', '+uploadTimeLabel+' WIB':''} · Version: ${APP_VERSION}`);
+        const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Server: Admin Online · Version: ${APP_VERSION}`);showStatus($('databaseUpdateStatus'),'ok',`Database diperbarui pada: ${uploadDateLabel}${uploadTimeLabel?', pukul '+uploadTimeLabel+' WIB':''} · ${Number(info.total_rows||0).toLocaleString('id-ID')} data.`);
         renderAdmin();
       }catch(e){metadata=null;products=[];$('toggleDatabase').disabled=true;showStatus($('catalogStatus'),'error','Gagal mengambil database: '+(e.message||e));}
     }
