@@ -923,21 +923,32 @@ a{color:#68bdff}
             && !/ultra.?wide|wide.?angle|tele(photo)?|macro|depth|front|selfie/.test(label);
         });
 
-        // Kamera belakang utama biasanya menjadi kandidat pertama yang bukan
-        // lensa tambahan. Jika label tidak dikenali, pertahankan kamera belakang
-        // yang sudah berhasil dibuka agar pemindaian tetap dapat berjalan.
-        const selected=backCameras[0];
-        if(!selected)return probe;
-
-        const selectedStream=await navigator.mediaDevices.getUserMedia({
-          audio:false,
-          video:{...baseVideo,deviceId:{exact:selected.deviceId}}
+        // Camera 0 pada Android/Samsung adalah prioritas untuk kamera belakang utama.
+        const primaryCamera=backCameras.find(device=>{
+          const label=(device.label||'').toLowerCase();
+          return /camera2?\s*0\b|camera\s*0\b/.test(label)
+            || /\b(main|primary)\b/.test(label);
         });
-        probe.getTracks().forEach(track=>track.stop());
-        return selectedStream;
+        const selected=primaryCamera||backCameras[0];
+        if(!selected){
+          probe.getTracks().forEach(track=>track.stop());
+          throw new Error('Kamera belakang utama tidak terdeteksi.');
+        }
+
+        try{
+          const selectedStream=await navigator.mediaDevices.getUserMedia({
+            audio:false,
+            video:{...baseVideo,deviceId:{exact:selected.deviceId}}
+          });
+          probe.getTracks().forEach(track=>track.stop());
+          return selectedStream;
+        }catch(selectionError){
+          probe.getTracks().forEach(track=>track.stop());
+          throw new Error('Tidak dapat membuka kamera utama ('+(selected.label||'Camera 0')+'). '+(selectionError.message||''));
+        }
       }catch(error){
-        // Jangan gagal total jika perangkat tidak mengizinkan enumerasi lensa.
-        return probe;
+        if(probe.active)probe.getTracks().forEach(track=>track.stop());
+        throw error;
       }
     }
     async function startCamera(){
