@@ -10,7 +10,7 @@ on:
       - 'index.html'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -48,10 +48,26 @@ jobs:
             exit 1
           fi
           gradle assembleDebug
-      - name: Upload APK
+      - name: Publish APK release for in-app updates
+        working-directory: android
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="VELTRIX-${VERSION_NAME}.apk"
+          cp "$APK" "$RELEASE_APK"
+          TAG="v${VERSION_NAME}"
+          NOTES="Pembaruan aplikasi VELTRIX.\nVELTRIX_VERSION_CODE=${GITHUB_RUN_NUMBER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$RELEASE_APK" --clobber
+          else
+            gh release create "$TAG" "$RELEASE_APK" --title "VELTRIX ${VERSION_NAME}" --notes "$NOTES"
+          fi
+      - name: Upload APK build artifact
         uses: actions/upload-artifact@v4
         with:
           name: VELTRIX-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/VELTRIX-*.apk
           if-no-files-found: error
           retention-days: 30
