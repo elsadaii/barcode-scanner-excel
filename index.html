@@ -346,11 +346,15 @@ a{color:#68bdff}
 }
 @media(prefers-reduced-motion:reduce){.logo-mark{filter:none}}
 
+
+/* APK: beri ruang tambahan di atas karena tidak ada address bar browser */
+body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18px)}
+@media(max-width:600px){body.native-apk .top{padding-top:calc(19px + env(safe-area-inset-top, 0px) + 18px)}}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
 </head>
-<body>
+<body><script>if(new URLSearchParams(location.search).get("native")==="1")document.body.classList.add("native-apk");</script>
   <header class="top"><div class="top-inner">
     <div class="header-row">
       <div class="brand"><div class="logo"><svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs><linearGradient id="veltrix-mark-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#25d9ff"/><stop offset="1" stop-color="#2464ff"/></linearGradient></defs><path d="M7 10h14l11 22 11-22h14L32 56 7 10Z" fill="url(#veltrix-mark-gradient)"/><path d="M32 32 42 11h14L32 56" fill="none" stroke="#9bf1ff" stroke-width="2.5" stroke-linejoin="round" opacity=".9"/></svg></div><div class="brand-copy"><h1>VELTRIX</h1><p>Find. Manage. Control.</p></div><button class="small-btn" id="loginAdminEntry" type="button">Login Admin</button><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
