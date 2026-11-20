@@ -939,6 +939,30 @@ a{color:#68bdff}
     async function requestGoogleDriveToken(clientId){
       const now=Date.now();
       if(googleAccessToken&&googleAccessTokenClientId===clientId&&googleAccessTokenExpiresAt>now+60000)return googleAccessToken;
+      if(window.VeltrixNativeScanner?.authorizeGoogleDrive){
+        return new Promise((resolve,reject)=>{
+          const receive=event=>{
+            window.removeEventListener('veltrix-google-drive-token',receive);
+            const token=event.detail?.accessToken||'';
+            const error=event.detail?.error||'';
+            if(!token){googleAccessToken='';googleAccessTokenExpiresAt=0;googleAccessTokenClientId='';reject(new Error(error||'Otorisasi Google Drive gagal.'));return;}
+            googleAccessToken=token;
+            googleAccessTokenClientId=clientId;
+            googleAccessTokenExpiresAt=Date.now()+3500000;
+            resolve(token);
+          };
+          window.addEventListener('veltrix-google-drive-token',receive);
+          try{
+            if(!window.VeltrixNativeScanner.authorizeGoogleDrive()){
+              window.removeEventListener('veltrix-google-drive-token',receive);
+              reject(new Error('Aplikasi Android tidak dapat memulai izin Google Drive.'));
+            }
+          }catch(error){
+            window.removeEventListener('veltrix-google-drive-token',receive);
+            reject(error);
+          }
+        });
+      }
       await loadGoogleIdentity();
       return new Promise((resolve,reject)=>{
         try{
