@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
 }
 
 def veltrixKeystorePath = System.getenv('VELTRIX_KEYSTORE_PATH')
@@ -60,4 +61,6 @@ dependencies {
     implementation 'androidx.camera:camera-view:1.4.1'
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
     implementation 'com.google.android.gms:play-services-auth:21.6.0'
+    implementation platform('com.google.firebase:firebase-bom:34.4.0')
+    implementation 'com.google.firebase:firebase-messaging'
 }
