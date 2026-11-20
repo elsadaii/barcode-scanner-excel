@@ -699,17 +699,31 @@ a{color:#68bdff}
       const d=new Date(value);
       return Number.isNaN(d.getTime())?'Tanggal tidak diketahui':new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(d)+' WIB';
     }
-    async function loadCatalogRows(importId){
+    async function loadCatalogRows(importId,expectedTotal=null){
       if(!importId)throw new Error('Katalog sumber tidak ditemukan.');
-      const all=[];
-      for(let offset=0;;offset+=BACKUP_PAGE_SIZE){
-        const {data,error}=await supabase.from('barcode_products').select('row_number,upc,article,article_description,stock,special_stock,image_path')
-          .eq('import_id',importId).order('row_number',{ascending:true}).range(offset,offset+BACKUP_PAGE_SIZE-1);
+      const total=Number(expectedTotal);
+      if(!Number.isFinite(total)||total<1){
+        const {count,error}=await supabase.from('barcode_products').select('id',{count:'exact',head:true}).eq('import_id',importId);
         if(error)throw error;
-        const page=data||[];all.push(...page);
-        if(page.length<BACKUP_PAGE_SIZE)break;
+        expectedTotal=Number(count||0);
       }
-      return all;
+      const pageCount=Math.ceil(Number(expectedTotal||0)/BACKUP_PAGE_SIZE);
+      if(!pageCount)return [];
+      const pages=new Array(pageCount);
+      let nextPage=0;
+      const workers=Array.from({length:Math.min(3,pageCount)},async()=>{
+        while(true){
+          const pageIndex=nextPage++;
+          if(pageIndex>=pageCount)return;
+          const offset=pageIndex*BACKUP_PAGE_SIZE;
+          const {data,error}=await supabase.from('barcode_products').select('row_number,upc,article,article_description,stock,special_stock,image_path')
+            .eq('import_id',importId).order('row_number',{ascending:true}).range(offset,offset+BACKUP_PAGE_SIZE-1);
+          if(error)throw error;
+          pages[pageIndex]=data||[];
+        }
+      });
+      await Promise.all(workers);
+      return pages.flat();
     }
     async function pruneCatalogBackups(){
       const {data,error}=await supabase.from('barcode_imports').select('id,file_name,uploaded_at')
@@ -748,7 +762,7 @@ a{color:#68bdff}
       const {data:info,error:infoError}=await supabase.from('barcode_imports')
         .select('id,file_name,total_rows,headers').eq('id',activeImportId).single();
       if(infoError)throw infoError;
-      const rows=await loadCatalogRows(activeImportId);
+      const rows=await loadCatalogRows(activeImportId,info.total_rows);
       if(!rows.length)throw new Error('Katalog aktif kosong; backup tidak dibuat.');
       if(Number(info.total_rows||0)!==rows.length)throw new Error('Jumlah data katalog tidak cocok. Backup dibatalkan agar salinan tidak lengkap.');
       const backupName=BACKUP_PREFIX+(reason==='manual'?'Manual':reason)+' - '+info.file_name+' - '+backupStamp();
@@ -757,16 +771,27 @@ a{color:#68bdff}
         .select('id').single();
       if(createError)throw createError;
       try{
+        const batches=[];
         for(let start=0;start<rows.length;start+=BACKUP_PAGE_SIZE){
-          const batch=rows.slice(start,start+BACKUP_PAGE_SIZE).map((p,i)=>({
+          batches.push({start,rows:rows.slice(start,start+BACKUP_PAGE_SIZE).map((p,i)=>({
             import_id:created.id,row_number:Number(p.row_number)||start+i+2,
             upc:clean(p.upc),article:clean(p.article),article_description:clean(p.article_description),
             stock:clean(p.stock),special_stock:clean(p.special_stock),image_path:p.image_path||null
-          }));
-          const {error}=await supabase.from('barcode_products').insert(batch);
-          if(error)throw error;
-          showStatus($('backupStatus'),'info','Menyimpan backup: '+Math.min(start+batch.length,rows.length).toLocaleString('id-ID')+' dari '+rows.length.toLocaleString('id-ID')+' data…');
+          }))});
         }
+        let nextBatch=0,completed=0;
+        const workers=Array.from({length:Math.min(3,batches.length)},async()=>{
+          while(true){
+            const index=nextBatch++;
+            if(index>=batches.length)return;
+            const batch=batches[index];
+            const {error}=await supabase.from('barcode_products').insert(batch.rows);
+            if(error)throw error;
+            completed+=batch.rows.length;
+            showStatus($('backupStatus'),'info','Menyimpan backup: '+completed.toLocaleString('id-ID')+' dari '+rows.length.toLocaleString('id-ID')+' data…');
+          }
+        });
+        await Promise.all(workers);
         await pruneCatalogBackups();await refreshBackupList();
         showStatus($('backupStatus'),'ok','Backup berhasil dibuat: '+rows.length.toLocaleString('id-ID')+' data.');
         return created.id;
@@ -791,7 +816,7 @@ a{color:#68bdff}
       document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
     }
     async function downloadCatalogBackup(importId){
-      const info=await getImportInfo(importId);const rows=await loadCatalogRows(importId);
+      const info=await getImportInfo(importId);const rows=await loadCatalogRows(importId,info.total_rows);
       if(Number(info.total_rows||0)!==rows.length)throw new Error('Jumlah data backup tidak cocok. File tidak dibuat.');
       downloadJsonPayload(makeBackupPayload(info,rows),'barcode-backup-'+backupStamp()+'.json');
       showStatus($('backupStatus'),'ok','File backup JSON berhasil disiapkan: '+rows.length.toLocaleString('id-ID')+' data.');
@@ -1031,18 +1056,27 @@ a{color:#68bdff}
       const workbook=XLSX.read(source,{type:'array',cellDates:false});
       const sheetName=workbook.SheetNames[0],sheet=workbook.Sheets[sheetName];
       if(!sheet)throw new Error('Sheet pertama pada Excel tidak ditemukan.');
-      const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''});
-      if(!matrix.length)throw new Error('Excel di Google Drive kosong.');
-      const headerMap={};(matrix[0]||[]).forEach((h,i)=>headerMap[norm(h)]=i);
+      if(!sheet['!ref'])throw new Error('Excel di Google Drive kosong.');
+      const range=XLSX.utils.decode_range(sheet['!ref']);
+      const headerMap={};
+      for(let col=range.s.c;col<=range.e.c;col++){
+        const address=XLSX.utils.encode_cell({r:range.s.r,c:col});
+        const cell=sheet[address];
+        const header=cell?XLSX.utils.format_cell(cell):'';
+        headerMap[norm(header)]=col;
+      }
       const missing=EXPECTED.filter(h=>headerMap[norm(h)]===undefined);
       if(missing.length)throw new Error('Kolom Excel tidak lengkap: '+missing.join(', ')+'.');
       const rowIndex=Number(original.row_number)-1;
-      if(!Number.isInteger(rowIndex)||rowIndex<1||rowIndex>=matrix.length)throw new Error('Nomor baris produk tidak cocok dengan Excel di Drive. Sinkronkan ulang katalog dari file master sebelum mengedit.');
-      const row=matrix[rowIndex]||[];
-      if(clean(row[headerMap[norm('UPC')]])!==clean(original.upc)||clean(row[headerMap[norm('Article')]])!==clean(original.article))throw new Error('Isi baris Excel sudah berbeda dari database. Sinkronkan ulang dari Google Drive sebelum mengedit agar data tidak tertimpa.');
-      EXPECTED.forEach(h=>{const key=h==='Article Description'?'article_description':h.toLowerCase().replace(/ /g,'_');row[headerMap[norm(h)]]=values[key]??'';});
-      matrix[rowIndex]=row;
-      workbook.Sheets[sheetName]=XLSX.utils.aoa_to_sheet(matrix);
+      if(!Number.isInteger(rowIndex)||rowIndex<=range.s.r||rowIndex>range.e.r)throw new Error('Nomor baris produk tidak cocok dengan Excel di Drive. Sinkronkan ulang katalog dari file master sebelum mengedit.');
+      const readCell=col=>{const cell=sheet[XLSX.utils.encode_cell({r:rowIndex,c:col})];return cell?XLSX.utils.format_cell(cell):'';};
+      if(clean(readCell(headerMap[norm('UPC')]))!==clean(original.upc)||clean(readCell(headerMap[norm('Article')]))!==clean(original.article))throw new Error('Isi baris Excel sudah berbeda dari database. Sinkronkan ulang dari Google Drive sebelum mengedit agar data tidak tertimpa.');
+      EXPECTED.forEach(h=>{
+        const key=h==='Article Description'?'article_description':h.toLowerCase().replace(/ /g,'_');
+        const address=XLSX.utils.encode_cell({r:rowIndex,c:headerMap[norm(h)]});
+        const previous=sheet[address]||{};
+        sheet[address]={...previous,t:'s',v:String(values[key]??'')};
+      });
       const output=XLSX.write(workbook,{bookType:'xlsx',type:'array'});
       const upload=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(fileId)+'?uploadType=media',{
         method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:output
