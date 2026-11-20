@@ -1095,7 +1095,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     function renderNotificationToggle(){
       const native=new URLSearchParams(location.search).get('native')==='1';
       const active=native
-        ? !!(window.VeltrixNativeScanner && window.VeltrixNativeScanner.notificationsEnabled())
+        ? !!(window.VeltrixNativeScanner && typeof window.VeltrixNativeScanner.notificationsEnabled === 'function' && window.VeltrixNativeScanner.notificationsEnabled())
         : pushEnabled && ('Notification' in window && Notification.permission==='granted');
       $('toggleNotifications').setAttribute('aria-checked',active?'true':'false');
       $('notificationToggleStatus').textContent=active?'Aktif':'Nonaktif';
