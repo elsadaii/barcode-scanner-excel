@@ -35,7 +35,7 @@ jobs:
 
           files = [Path("index.html"), Path("admin.html")]
           versions = []
-          pattern = re.compile(r"(const\\s+APP_VERSION\\s*=\\s*['\"])(\\d+)\\.(\\d+)\\.(\\d+)(['\"])")
+          pattern = re.compile(r"(const\s+APP_VERSION\s*=\s*['\"])(\d+)\.(\d+)\.(\d+)(['\"])")
 
           for path in files:
               text = path.read_text(encoding="utf-8")
