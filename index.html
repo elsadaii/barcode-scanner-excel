@@ -371,11 +371,11 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
 .notification-settings{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 20px;border-bottom:1px solid #ece7dc}
 .notification-settings strong{display:block;color:#244333;font-size:14px}
 .notification-settings small{display:block;margin-top:4px;color:#899187;font-size:12px}
-.notification-switch{width:48px;height:28px;padding:3px;border:0;border-radius:20px;background:#b8beb8;cursor:pointer;transition:background .18s;flex:0 0 auto}
-.notification-switch span{display:block;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0002;transition:transform .18s}
+.notification-switch{position:relative;display:block;box-sizing:border-box;width:50px;height:30px;min-width:50px;padding:0;border:0;border-radius:999px;background:#b8beb8;cursor:pointer;transition:background .2s ease;flex:0 0 50px;appearance:none;-webkit-appearance:none}
+.notification-switch span{position:absolute;display:block;left:3px;top:3px;width:24px;height:24px;margin:0;padding:0;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0003;transform:translateX(0);transition:transform .22s ease;pointer-events:none}
 .notification-switch[aria-checked="true"]{background:#27865c}
 .notification-switch[aria-checked="true"] span{transform:translateX(20px)}
-.notification-switch:disabled{opacity:.55;cursor:wait}
+.notification-switch:disabled{opacity:.7;cursor:wait}
 .notification-history-label{padding:13px 20px 0;color:#748176;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 @media(max-width:600px){.notification-dialog{max-height:82vh;border-radius:17px}.notification-dialog-head{padding:16px}.notification-list{padding:8px 13px 13px}}
 </style>
@@ -1151,18 +1151,27 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       pushEnabled=false;localStorage.setItem('veltrix_push_enabled_v1','false');renderNotificationToggle();
     }
     $('toggleNotifications').addEventListener('click',async()=>{
-      const toggle=$('toggleNotifications');toggle.disabled=true;
+      const toggle=$('toggleNotifications');
+      const next=toggle.getAttribute('aria-checked')!=='true';
+      toggle.setAttribute('aria-checked',next?'true':'false');
+      $('notificationToggleStatus').textContent=next?'Mengaktifkan…':'Menonaktifkan…';
+      toggle.disabled=true;
+      let failed=false;
       try{
         const native=new URLSearchParams(location.search).get('native')==='1';
-        const next=toggle.getAttribute('aria-checked')!=='true';
         if(native){
           if(!window.VeltrixNativeScanner || !window.VeltrixNativeScanner.setNotificationsEnabled(next))throw new Error('Pengaturan notifikasi Android tidak tersedia.');
           pushEnabled=next;
         }else if(next)await enableWebPush();
         else await disableWebPush();
       }catch(error){
+        failed=true;
+        renderNotificationToggle();
         $('notificationToggleStatus').textContent=error.message||'Pengaturan notifikasi gagal.';
-      }finally{toggle.disabled=false;renderNotificationToggle();}
+      }finally{
+        toggle.disabled=false;
+        if(!failed)renderNotificationToggle();
+      }
     });
 
     async function init(){
