@@ -623,13 +623,13 @@ a{color:#68bdff}
         const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
         if(stateError)throw stateError;
         activeImportId=state?.active_import_id||null;
-        if(!state){metadata=null;products=[];showStatus($('catalogStatus'),'error',`Server: Status tidak ditemukan · Version: ${APP_VERSION}`);renderAdmin();return;}if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn',`Server: Offline · Version: ${APP_VERSION}`);renderAdmin();return;}
+        if(!state){metadata=null;products=[];showStatus($('catalogStatus'),'error',`Server: Status tidak ditemukan · Version: ${APP_VERSION}`);showStatus($('databaseUpdateStatus'),'warn','Database belum tersedia.');renderAdmin();return;}if(!activeImportId){metadata=null;products=[];showStatus($('catalogStatus'),'warn',`Server: Offline · Version: ${APP_VERSION}`);showStatus($('databaseUpdateStatus'),'warn','Database sedang Offline.');renderAdmin();return;}
         const {data:info,error:infoError}=await supabase.from('barcode_imports').select('id,file_name,total_rows,headers,uploaded_at').eq('id',activeImportId).single();
         if(infoError)throw infoError;
         metadata={fileName:info.file_name,uploadedAt:info.uploaded_at,headers:info.headers||[],totalRows:info.total_rows};
         const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Server: Online · Version: ${APP_VERSION}`);showStatus($('databaseUpdateStatus'),'ok',`Database diperbarui pada: ${uploadDateLabel}${uploadTimeLabel?', pukul '+uploadTimeLabel+' WIB':''} · ${Number(info.total_rows||0).toLocaleString('id-ID')} data.`);
         renderAdmin();
-      }catch(e){metadata=null;products=[];activeImportId=null;showStatus($('catalogStatus'),'error',`Server: Gagal diperiksa · Last Update: — · Version: ${APP_VERSION} · Detail: ${e.message||'Koneksi atau izin akses bermasalah'}`);}
+      }catch(e){metadata=null;products=[];activeImportId=null;showStatus($('catalogStatus'),'error',`Server: Gagal diperiksa · Version: ${APP_VERSION} · Detail: ${e.message||'Koneksi atau izin akses bermasalah'}`);showStatus($('databaseUpdateStatus'),'error','Informasi pembaruan database gagal dimuat.');}
     }
 
     function parseCSV(text){
