@@ -3,6 +3,9 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def veltrixKeystorePath = System.getenv('VELTRIX_KEYSTORE_PATH')
+def veltrixKeystorePassword = System.getenv('VELTRIX_KEYSTORE_PASSWORD')
+
 android {
     namespace 'com.veltrix.scanner'
     compileSdk 35
@@ -15,9 +18,28 @@ android {
         versionName '1.0.0'
     }
 
+    signingConfigs {
+        if (veltrixKeystorePath && veltrixKeystorePassword) {
+            veltrix {
+                storeFile file(veltrixKeystorePath)
+                storePassword veltrixKeystorePassword
+                keyAlias 'veltrix'
+                keyPassword veltrixKeystorePassword
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (veltrixKeystorePath && veltrixKeystorePassword) {
+                signingConfig signingConfigs.veltrix
+            }
+        }
         release {
             minifyEnabled false
+            if (veltrixKeystorePath && veltrixKeystorePassword) {
+                signingConfig signingConfigs.veltrix
+            }
         }
     }
 
