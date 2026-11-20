@@ -632,7 +632,7 @@ a{color:#68bdff}
       if(previousActivity&&Date.now()-previousActivity>=ADMIN_IDLE_TIMEOUT_MS){
         try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}
         await supabase.auth.signOut();
-        window.location.replace('./index.html?from=admin-timeout');
+        window.location.replace(scannerReturnUrl('admin-timeout'));
         return;
       }
       currentUser=user;isAdmin=true;
