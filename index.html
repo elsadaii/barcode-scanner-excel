@@ -898,9 +898,38 @@ a{color:#68bdff}
     function showResultMessage(message,type){currentFoundResults=[];currentResultPage=0;$('emptyResult').hidden=true;$('results').innerHTML='';$('resultSubtitle').textContent='Hasil pencarian';const box=document.createElement('div');box.className='status '+type;box.style.display='block';box.textContent=message;$('results').appendChild(box);revealResults();}
     $('manualForm').addEventListener('submit',e=>{e.preventDefault();lookup($('manualCode').value);});
 
+    async function openMainBackCamera(){
+      const media=navigator.mediaDevices;
+      // Buka kamera belakang sementara agar browser mengungkap label semua kamera.
+      const probe=await media.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+      let cameras=[];
+      try{cameras=(await media.enumerateDevices()).filter(d=>d.kind==='videoinput');}catch(e){}
+      const back=cameras.filter(d=>/back|rear|environment|belakang/i.test(d.label));
+      const excluded=/ultra.?wide|tele(photo)?|macro|depth|front|user/i;
+      const preferred=back.filter(d=>!excluded.test(d.label));
+      const pool=preferred.length?preferred:back;
+      if(!pool.length)return probe;
+      // Pada banyak perangkat Android, Camera 0 adalah sensor utama.
+      pool.sort((a,b)=>{
+        const num=x=>{const m=x.label.match(/camera\\s*(\\d+)/i);return m?Number(m[1]):999;};
+        const score=x=>(/main|primary|wide|standard/i.test(x.label)?-100:0)+num(x);
+        return score(a)-score(b);
+      });
+      const chosen=pool[0];
+      probe.getTracks().forEach(t=>t.stop());
+      try{
+        const selected=await media.getUserMedia({audio:false,video:{deviceId:{exact:chosen.deviceId},width:{ideal:1920},height:{ideal:1080},focusMode:{ideal:'continuous'}}});
+        return selected;
+      }catch(e){
+        // Jika deviceId spesifik ditolak browser, gunakan kamera belakang default.
+        return media.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},focusMode:{ideal:'continuous'}}});
+      }
+    }
     async function startCamera(){
       clearStatus($('cameraStatus'));if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
-      try{stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},focusMode:{ideal:'continuous'}}});const videoTrack=stream.getVideoTracks()[0];if(videoTrack)await enableCameraFocus(videoTrack);$('video').srcObject=stream;await $('video').play();$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;
+      try{stopCamera();$('cameraWrap').classList.remove('scan-success');$('cameraWrap').classList.add('is-scanning');$('cameraWrap').hidden=false;stream=await openMainBackCamera();const videoTrack=stream.getVideoTracks()[0];if(videoTrack)await enableCameraFocus(videoTrack);$('video').srcObject=stream;await $('video').play();$('cameraPlaceholder').hidden=true;$('scanFrame').style.display='block';scanning=true;
+      const activeLabel=videoTrack?.label||'kamera belakang';
+      showStatus($('cameraStatus'),'info','Menggunakan: '+activeLabel+'. Jika bukan kamera utama, beri tahu saya nama kamera yang muncul.');
         if('BarcodeDetector'in window){let formats=[];try{formats=await BarcodeDetector.getSupportedFormats();}catch(e){}const wanted=['upc_a','upc_e','ean_13','ean_8','code_128','code_39','code_93','itf','codabar','qr_code','data_matrix','pdf417','aztec'];const supported=wanted.filter(f=>formats.includes(f));detector=new BarcodeDetector(supported.length?{formats:supported}:undefined);nativeScanLoop();}
         else{await loadZXing();if(!window.ZXing)throw new Error('Fitur pemindai kamera tidak tersedia. Gunakan Chrome Android terbaru atau pencarian manual.');zxingReader=new ZXing.BrowserMultiFormatReader();clearStatus($('cameraStatus'));zxingReader.decodeFromVideoElement($('video'),(result,err)=>{if(result)acceptScan(result.getText());else if(err&&/NotFoundException/.test(err.name||err.constructor?.name||''))lastRead='';});}
         $('startCamera').disabled=true;$('stopCamera').disabled=false;
