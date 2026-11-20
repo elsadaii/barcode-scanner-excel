@@ -1319,6 +1319,23 @@ a{color:#68bdff}
     function stopCamera(){if($('cameraWrap'))$('cameraWrap').classList.remove('is-scanning','scan-success');scanning=false;if(scanFrame)cancelAnimationFrame(scanFrame);scanFrame=null;detector=null;if(zxingReader){try{zxingReader.reset();}catch(e){}zxingReader=null;}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}if($('video'))$('video').srcObject=null;if($('cameraPlaceholder'))$('cameraPlaceholder').hidden=false;if($('cameraWrap'))$('cameraWrap').hidden=true;if($('scanFrame'))$('scanFrame').style.display='none';if($('startCamera'))$('startCamera').disabled=false;if($('stopCamera'))$('stopCamera').disabled=true;}
     $('startCamera').addEventListener('click',startCamera);$('stopCamera').addEventListener('click',stopCamera);window.addEventListener('pagehide',stopCamera);
 
+    $('sendManualPush').addEventListener('click',async()=>{
+      const title=$('pushTitle').value.trim(),body=$('pushBody').value.trim(),button=$('sendManualPush');
+      if(!title||!body){showStatus($('pushSendStatus'),'warn','Isi judul dan pesan notifikasi terlebih dahulu.');return;}
+      if(!isAdmin||!currentUser){showStatus($('pushSendStatus'),'error','Silakan login sebagai Admin.');return;}
+      if(!window.confirm('Kirim notifikasi ini ke semua perangkat yang terdaftar?'))return;
+      button.disabled=true;button.textContent='Mengirim...';
+      try{
+        const {data:{session},error:sessionError}=await supabase.auth.getSession();
+        if(sessionError||!session?.access_token)throw new Error('Sesi Admin tidak ditemukan. Silakan login ulang.');
+        const response=await fetch(cfg.url+'/functions/v1/send-manual-push',{method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.publishableKey,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({title,body})});
+        const result=await response.json();
+        if(!response.ok||!result.ok)throw new Error(result.error||'Pengiriman notifikasi gagal.');
+        showStatus($('pushSendStatus'),'ok',`Selesai. Terkirim: ${result.sent} dari ${result.total} perangkat. Gagal: ${result.failed}. Perangkat tidak aktif dihapus: ${result.removed}.`);
+      }catch(error){showStatus($('pushSendStatus'),'error','Notifikasi gagal dikirim: '+(error.message||error));}
+      finally{button.disabled=false;button.textContent='🔔 Kirim Notifikasi';}
+    });
+
     async function init(){
       if(!cfg.url||!cfg.publishableKey||!cfg.adminEmail||String(cfg.url).includes('GANTI_')||String(cfg.publishableKey).includes('GANTI_')||String(cfg.adminEmail).includes('GANTI_')){
         showStatus($('loginStatus'),'error','Aplikasi belum dihubungkan ke Supabase. Admin perlu mengisi URL, Publishable Key, dan email Admin pada file supabase-config.js.');return;
