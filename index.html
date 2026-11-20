@@ -1093,7 +1093,10 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     let pushMessaging=null;
     let pushEnabled=localStorage.getItem('veltrix_push_enabled_v1')==='true';
     function renderNotificationToggle(){
-      const active=pushEnabled && (new URLSearchParams(location.search).get('native')==='1' || ('Notification' in window && Notification.permission==='granted'));
+      const native=new URLSearchParams(location.search).get('native')==='1';
+      const active=native
+        ? !!(window.VeltrixNativeScanner && window.VeltrixNativeScanner.notificationsEnabled())
+        : pushEnabled && ('Notification' in window && Notification.permission==='granted');
       $('toggleNotifications').setAttribute('aria-checked',active?'true':'false');
       $('notificationToggleStatus').textContent=active?'Aktif':'Nonaktif';
     }
@@ -1150,8 +1153,13 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     $('toggleNotifications').addEventListener('click',async()=>{
       const toggle=$('toggleNotifications');toggle.disabled=true;
       try{
-        if(toggle.getAttribute('aria-checked')==='true')await disableWebPush();
-        else await enableWebPush();
+        const native=new URLSearchParams(location.search).get('native')==='1';
+        const next=toggle.getAttribute('aria-checked')!=='true';
+        if(native){
+          if(!window.VeltrixNativeScanner || !window.VeltrixNativeScanner.setNotificationsEnabled(next))throw new Error('Pengaturan notifikasi Android tidak tersedia.');
+          pushEnabled=next;
+        }else if(next)await enableWebPush();
+        else await disableWebPush();
       }catch(error){
         $('notificationToggleStatus').textContent=error.message||'Pengaturan notifikasi gagal.';
       }finally{toggle.disabled=false;renderNotificationToggle();}
