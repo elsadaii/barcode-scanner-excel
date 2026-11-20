@@ -87,6 +87,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         @JavascriptInterface fun stop() { runOnUiThread { scannerActivity?.finish() } }
+        @JavascriptInterface fun notificationsEnabled(): Boolean =
+            VeltrixFirebaseMessagingService.notificationsEnabled(applicationContext)
+        @JavascriptInterface fun setNotificationsEnabled(enabled: Boolean): Boolean {
+            VeltrixFirebaseMessagingService.setNotificationsEnabled(applicationContext, enabled)
+            return true
+        }
         @JavascriptInterface fun authorizeGoogleDrive(): Boolean {
             runOnUiThread { requestGoogleDriveAuthorization() }
             return true
