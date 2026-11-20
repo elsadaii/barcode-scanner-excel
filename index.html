@@ -350,6 +350,25 @@ a{color:#68bdff}
 /* APK: beri ruang tambahan di atas karena tidak ada address bar browser */
 body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18px)}
 @media(max-width:600px){body.native-apk .top{padding-top:calc(19px + env(safe-area-inset-top, 0px) + 18px)}}
+
+/* Pusat riwayat notifikasi pengguna */
+.notification-bell{position:relative;display:inline-grid;place-items:center;flex:0 0 42px;width:42px;height:42px;margin-left:auto;border:1px solid rgba(215,185,130,.38);border-radius:12px;background:rgba(255,255,255,.09);color:#f2dfb9;cursor:pointer}
+.notification-bell svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.notification-count{position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:20px;background:#c94c43;color:white;font-size:10px;font-weight:800;line-height:19px;text-align:center;border:2px solid #17372b}
+.notification-backdrop{position:fixed;inset:0;z-index:1200;background:rgba(8,18,13,.62);display:grid;place-items:center;padding:16px}
+.notification-dialog{width:min(100%,510px);max-height:min(78vh,680px);display:flex;flex-direction:column;overflow:hidden;border:1px solid #e5dece;border-radius:20px;background:#fffefa;box-shadow:0 25px 80px rgba(0,0,0,.32)}
+.notification-dialog-head{display:flex;align-items:center;justify-content:space-between;padding:19px 20px;border-bottom:1px solid #ece7dc}
+.notification-dialog-head h2{font:500 23px Georgia,serif;color:#20382b;margin:0}
+.notification-dialog-head p{font-size:12px;color:#7b857c;margin:5px 0 0}
+.notification-close{width:34px;height:34px;border:0;border-radius:10px;background:#f2f0e9;color:#405747;font-size:25px;line-height:1;cursor:pointer}
+.notification-list{overflow:auto;padding:10px 15px 15px}
+.notification-item{padding:14px 5px;border-bottom:1px solid #eee9df}
+.notification-item:last-child{border-bottom:0}
+.notification-item h3{margin:0 0 6px;color:#244333;font-size:14px;font-weight:800}
+.notification-item p{margin:0;color:#4d5b51;font-size:13px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.notification-item time{display:block;margin-top:8px;color:#899187;font-size:11px}
+.notification-empty{padding:32px 12px;text-align:center;color:#879087;font-size:13px}
+@media(max-width:600px){.notification-dialog{max-height:82vh;border-radius:17px}.notification-dialog-head{padding:16px}.notification-list{padding:8px 13px 13px}}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
@@ -357,12 +376,18 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
 <body><script>if(new URLSearchParams(location.search).get("native")==="1")document.body.classList.add("native-apk");</script>
   <header class="top"><div class="top-inner">
     <div class="header-row">
-      <div class="brand"><div class="logo"><svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs><linearGradient id="veltrix-mark-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#25d9ff"/><stop offset="1" stop-color="#2464ff"/></linearGradient></defs><path d="M7 10h14l11 22 11-22h14L32 56 7 10Z" fill="url(#veltrix-mark-gradient)"/><path d="M32 32 42 11h14L32 56" fill="none" stroke="#9bf1ff" stroke-width="2.5" stroke-linejoin="round" opacity=".9"/></svg></div><div class="brand-copy"><h1>VELTRIX</h1><p>Find. Manage. Control.</p></div><button class="small-btn" id="loginAdminEntry" type="button">Login Admin</button><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
+      <div class="brand"><div class="logo"><svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs><linearGradient id="veltrix-mark-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#25d9ff"/><stop offset="1" stop-color="#2464ff"/></linearGradient></defs><path d="M7 10h14l11 22 11-22h14L32 56 7 10Z" fill="url(#veltrix-mark-gradient)"/><path d="M32 32 42 11h14L32 56" fill="none" stroke="#9bf1ff" stroke-width="2.5" stroke-linejoin="round" opacity=".9"/></svg></div><div class="brand-copy"><h1>VELTRIX</h1><p>Find. Manage. Control.</p></div><button class="notification-bell" id="notificationBell" type="button" aria-label="Riwayat notifikasi" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-count" id="notificationCount" hidden>0</span></button><button class="small-btn" id="loginAdminEntry" type="button">Login Admin</button><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
     </div>
     <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab" id="resetPasswordBtn" type="button">🔐 Reset Password</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
   </div></header>
 
+  <div class="notification-backdrop" id="notificationBackdrop" hidden>
+    <section class="notification-dialog" role="dialog" aria-modal="true" aria-labelledby="notificationHeading">
+      <div class="notification-dialog-head"><div><h2 id="notificationHeading">Notifikasi</h2><p>Informasi terbaru dari VELTRIX</p></div><button class="notification-close" id="closeNotifications" type="button" aria-label="Tutup">×</button></div>
+      <div class="notification-list" id="notificationList"><div class="notification-empty">Memuat riwayat notifikasi…</div></div>
+    </section>
+  </div>
   <main class="app">
     <section id="authPage" class="panel login-card" hidden>
       <div class="login-brand">🔐</div>
@@ -567,6 +592,8 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       $('authPage').hidden=true;$('appContent').hidden=false;$('appTabs').hidden=true;$('menuToggle').hidden=false;$('menuToggle').setAttribute('aria-expanded','false');
       $('userEmail').textContent=user.email||'Akun aktif';$('tabAdmin').hidden=!isAdmin;$('changePinBtn').hidden=!isAdmin;$('accessNotice').hidden=true;$('accessNotice').textContent='';
       if(!isAdmin&&$('adminPage').hidden===false)setTab('scanner');
+      $('notificationBell').hidden=false;
+      try{await loadNotificationHistory(false);}catch(error){console.warn('Notification history unavailable',error);}
       await refreshCatalog();
       if(isAdmin) await detectLegacyData();
     }
@@ -1099,6 +1126,49 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       if(!window.supabase?.createClient){showStatus($('catalogStatus'),'error','Pustaka koneksi database gagal dimuat. Periksa internet lalu muat ulang halaman.');return;}
       // Halaman pengguna hanya membaca katalog; tidak memakai sesi login Admin.
       supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      // Riwayat notifikasi bersama untuk semua pengguna scanner.
+      const READ_NOTIFICATIONS_KEY='veltrix_notification_read_ids_v1';
+      function getReadNotificationIds(){try{return new Set(JSON.parse(localStorage.getItem(READ_NOTIFICATIONS_KEY)||'[]'));}catch(e){return new Set();}}
+      function updateNotificationBadge(items){
+        const read=getReadNotificationIds(),count=items.filter(item=>!read.has(item.id)).length;
+        $('notificationCount').textContent=count>99?'99+':String(count);
+        $('notificationCount').hidden=count===0;
+      }
+      function formatNotificationDate(value){
+        const date=new Date(value);
+        if(Number.isNaN(date.getTime()))return '';
+        return new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(date);
+      }
+      async function loadNotificationHistory(markRead=false){
+        const list=$('notificationList');
+        list.innerHTML='<div class="notification-empty">Memuat riwayat notifikasi…</div>';
+        const {data,error}=await supabase.from('barcode_notification_history').select('id,title,body,sent_at').order('sent_at',{ascending:false}).limit(50);
+        if(error)throw error;
+        const items=data||[];
+        updateNotificationBadge(items);
+        if(!items.length){list.innerHTML='<div class="notification-empty">Belum ada notifikasi.</div>';return;}
+        if(markRead){
+          const read=getReadNotificationIds();items.forEach(item=>read.add(item.id));
+          localStorage.setItem(READ_NOTIFICATIONS_KEY,JSON.stringify([...read].slice(-200)));
+          updateNotificationBadge(items);
+        }
+        list.replaceChildren();
+        items.forEach(item=>{
+          const article=document.createElement('article');article.className='notification-item';
+          const heading=document.createElement('h3');heading.textContent=item.title||'VELTRIX';
+          const body=document.createElement('p');body.textContent=item.body||'';
+          const time=document.createElement('time');time.dateTime=item.sent_at;time.textContent=formatNotificationDate(item.sent_at);
+          article.append(heading,body,time);list.appendChild(article);
+        });
+      }
+      $('notificationBell').addEventListener('click',async()=>{
+        $('notificationBackdrop').hidden=false;
+        try{await loadNotificationHistory(true);}catch(error){$('notificationList').innerHTML='<div class="notification-empty">Riwayat notifikasi gagal dimuat. Periksa koneksi internet.</div>';}
+      });
+      $('closeNotifications').addEventListener('click',()=>$('notificationBackdrop').hidden=true);
+      $('notificationBackdrop').addEventListener('click',event=>{if(event.target===$('notificationBackdrop'))$('notificationBackdrop').hidden=true;});
+      document.addEventListener('keydown',event=>{if(event.key==='Escape')$('notificationBackdrop').hidden=true;});
+
       await refreshCatalog();
       startServerStatusUpdates();
       if(new URLSearchParams(location.search).get('native')!=='1' && 'Notification' in window){
