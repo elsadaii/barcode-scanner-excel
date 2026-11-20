@@ -900,18 +900,45 @@ a{color:#68bdff}
     $('manualForm').addEventListener('submit',e=>{e.preventDefault();lookup($('manualCode').value);});
 
     async function openMainBackCamera(){
-      // Satu kali permintaan kamera: hindari membuka kamera sementara, enumerasi,
-      // lalu menutup dan membuka ulang perangkat yang sama.
-      return navigator.mediaDevices.getUserMedia({
+      const baseVideo={
+        width:{ideal:1280},
+        height:{ideal:720},
+        frameRate:{ideal:30,max:30},
+        focusMode:{ideal:'continuous'}
+      };
+
+      // Buka kamera belakang sementara agar browser memberikan label lensa,
+      // lalu pilih lensa belakang utama (bukan ultra-wide/tele/macro/depth).
+      const probe=await navigator.mediaDevices.getUserMedia({
         audio:false,
-        video:{
-          facingMode:{ideal:'environment'},
-          width:{ideal:1280},
-          height:{ideal:720},
-          frameRate:{ideal:30,max:30},
-          focusMode:{ideal:'continuous'}
-        }
+        video:{...baseVideo,facingMode:{exact:'environment'}}
       });
+
+      try{
+        const devices=await navigator.mediaDevices.enumerateDevices();
+        const cameras=devices.filter(device=>device.kind==='videoinput');
+        const backCameras=cameras.filter(device=>{
+          const label=(device.label||'').toLowerCase();
+          return /back|rear|environment|belakang/.test(label)
+            && !/ultra.?wide|wide.?angle|tele(photo)?|macro|depth|front|selfie/.test(label);
+        });
+
+        // Kamera belakang utama biasanya menjadi kandidat pertama yang bukan
+        // lensa tambahan. Jika label tidak dikenali, pertahankan kamera belakang
+        // yang sudah berhasil dibuka agar pemindaian tetap dapat berjalan.
+        const selected=backCameras[0];
+        if(!selected)return probe;
+
+        const selectedStream=await navigator.mediaDevices.getUserMedia({
+          audio:false,
+          video:{...baseVideo,deviceId:{exact:selected.deviceId}}
+        });
+        probe.getTracks().forEach(track=>track.stop());
+        return selectedStream;
+      }catch(error){
+        // Jangan gagal total jika perangkat tidak mengizinkan enumerasi lensa.
+        return probe;
+      }
     }
     async function startCamera(){
       clearStatus($('cameraStatus'));if(!navigator.mediaDevices?.getUserMedia){showStatus($('cameraStatus'),'error','Browser tidak menyediakan akses kamera. Buka aplikasi melalui HTTPS di Chrome Android atau gunakan kolom pencarian manual.');return;}
