@@ -935,15 +935,16 @@ a{color:#68bdff}
           throw new Error('Kamera belakang utama tidak terdeteksi.');
         }
 
+        // Tutup stream sementara sebelum membuka lensa terpilih.
+        // Sebagian perangkat Android tidak mengizinkan dua stream kamera bersamaan.
+        probe.getTracks().forEach(track=>track.stop());
+
         try{
-          const selectedStream=await navigator.mediaDevices.getUserMedia({
+          return await navigator.mediaDevices.getUserMedia({
             audio:false,
             video:{...baseVideo,deviceId:{exact:selected.deviceId}}
           });
-          probe.getTracks().forEach(track=>track.stop());
-          return selectedStream;
         }catch(selectionError){
-          probe.getTracks().forEach(track=>track.stop());
           throw new Error('Tidak dapat membuka kamera utama ('+(selected.label||'Camera 0')+'). '+(selectionError.message||''));
         }
       }catch(error){
