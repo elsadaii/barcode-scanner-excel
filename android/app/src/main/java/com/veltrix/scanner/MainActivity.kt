@@ -11,12 +11,17 @@ import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.Scope
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    private lateinit var googleDriveAuthorizationLauncher: androidx.activity.result.ActivityResultLauncher<IntentSenderRequest>
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) openNativeScanner() else notifyCameraClosed()
     }
@@ -25,6 +30,21 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         current = this
+        googleDriveAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            if (result.resultCode != RESULT_OK) {
+                deliverGoogleDriveResult(null, "Login Google Drive dibatalkan.")
+            } else {
+                try {
+                    val authorization = Identity.getAuthorizationClient(this)
+                        .getAuthorizationResultFromIntent(result.data)
+                    val token = authorization.accessToken
+                    if (token.isNullOrBlank()) deliverGoogleDriveResult(null, "Google tidak memberikan token akses Drive.")
+                    else deliverGoogleDriveResult(token, null)
+                } catch (error: Exception) {
+                    deliverGoogleDriveResult(null, error.message ?: "Otorisasi Google Drive gagal.")
+                }
+            }
+        }
         webView = WebView(this)
         webView.setBackgroundColor(android.graphics.Color.rgb(8, 23, 43))
         webView.settings.javaScriptEnabled = true
@@ -56,12 +76,54 @@ class MainActivity : AppCompatActivity() {
             }
         }
         @JavascriptInterface fun stop() { runOnUiThread { scannerActivity?.finish() } }
+        @JavascriptInterface fun authorizeGoogleDrive(): Boolean {
+            runOnUiThread { requestGoogleDriveAuthorization() }
+            return true
+        }
         @JavascriptInterface fun openExternal(url: String) {
             runOnUiThread {
                 if (url.startsWith("https://") || url.startsWith("http://")) {
                     runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                 }
             }
+        }
+    }
+
+    private fun requestGoogleDriveAuthorization() {
+        val request = AuthorizationRequest.builder()
+            .setRequestedScopes(listOf(Scope("https://www.googleapis.com/auth/drive")))
+            .build()
+        Identity.getAuthorizationClient(this)
+            .authorize(request)
+            .addOnSuccessListener { authorization ->
+                if (authorization.hasResolution()) {
+                    val pendingIntent = authorization.pendingIntent
+                    if (pendingIntent == null) {
+                        deliverGoogleDriveResult(null, "Google meminta verifikasi tambahan, tetapi dialog izin tidak tersedia.")
+                    } else {
+                        googleDriveAuthorizationLauncher.launch(
+                            IntentSenderRequest.Builder(pendingIntent).build()
+                        )
+                    }
+                } else {
+                    val token = authorization.accessToken
+                    if (token.isNullOrBlank()) deliverGoogleDriveResult(null, "Google tidak memberikan token akses Drive.")
+                    else deliverGoogleDriveResult(token, null)
+                }
+            }
+            .addOnFailureListener { error ->
+                deliverGoogleDriveResult(null, error.message ?: "Tidak dapat meminta izin Google Drive.")
+            }
+    }
+
+    private fun deliverGoogleDriveResult(token: String?, error: String?) {
+        val tokenJson = org.json.JSONObject.quote(token ?: "")
+        val errorJson = org.json.JSONObject.quote(error ?: "")
+        runOnUiThread {
+            webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('veltrix-google-drive-token',{detail:{accessToken:$tokenJson,error:$errorJson}}))",
+                null
+            )
         }
     }
 
