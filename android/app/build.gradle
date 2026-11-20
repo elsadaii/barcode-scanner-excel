@@ -15,8 +15,9 @@ android {
         applicationId 'com.veltrix.scanner'
         minSdk 23
         targetSdk 35
-        versionCode 1
-        versionName '1.0.0'
+        def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
     }
 
     signingConfigs {
