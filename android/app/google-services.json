@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "653886610803",
+    "project_id": "barcode-scanner-515214",
+    "storage_bucket": "barcode-scanner-515214.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:653886610803:android:2694c91e29e8f79243b906",
+        "android_client_info": {
+          "package_name": "com.veltrix.scanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "653886610803-9e494v0n4m511ak7lhc2l8smvo38lq89.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCq0VS7JbWLJHg1eYqKyxN24Jq6eZ2Z2QE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "653886610803-9e494v0n4m511ak7lhc2l8smvo38lq89.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
