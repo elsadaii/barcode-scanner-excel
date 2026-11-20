@@ -413,6 +413,16 @@ a{color:#68bdff}
           <p class="hint">Backup menyimpan data produk dan alamat foto. File foto tetap berada di Supabase Storage. Unduh JSON untuk menyimpan salinan di komputer. Pemulihan membuat katalog baru dan tidak menghapus backup sumber.</p>
           <div class="status" id="backupStatus" role="status"></div>
         </div>
+        <div class="panel" id="manualNotificationPanel">
+          <div class="section-head"><div><h2>Notifikasi Manual</h2><p>Kirim pemberitahuan langsung ke perangkat yang sudah mengaktifkan notifikasi VELTRIX. Tidak ada notifikasi otomatis.</p></div></div>
+          <div class="form-grid">
+            <div><label for="pushTitle">Judul Notifikasi</label><input class="text-input" id="pushTitle" maxlength="100" placeholder="Contoh: Informasi VELTRIX"></div>
+            <div><label for="pushBody">Isi Notifikasi</label><textarea class="text-input" id="pushBody" maxlength="500" rows="3" placeholder="Tulis pesan yang ingin dikirim..."></textarea></div>
+          </div>
+          <div class="actions"><button class="btn primary" id="sendManualPush" type="button">🔔 Kirim Notifikasi</button></div>
+          <p class="hint">Notifikasi hanya dikirim setelah tombol ini ditekan. Perangkat harus sudah mengizinkan notifikasi dan terdaftar.</p>
+          <div class="status" id="pushSendStatus" role="status"></div>
+        </div>
         <div class="panel"><h2 style="font-size:16px;margin:0 0 8px">Cara kerja pencarian</h2><p class="hint" style="margin:0">Setiap barcode dicari pada kedua kolom: <b>UPC</b> dan <b>Article</b>. Salah satu boleh kosong. Jika kode cocok dengan lebih dari satu baris, semua hasil ditampilkan agar Anda dapat memilih data yang benar.</p></div>
       </section>
     <div class="pin-backdrop" id="pinBackdrop" hidden>
