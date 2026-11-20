@@ -1,0 +1,84 @@
+name: Automatic App Version
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - 'admin.html'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: automatic-app-version
+  cancel-in-progress: true
+
+jobs:
+  bump-version:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Increase app version in both pages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          files = [Path("index.html"), Path("admin.html")]
+          versions = []
+          pattern = re.compile(r"(const\\s+APP_VERSION\\s*=\\s*['\"])(\\d+)\\.(\\d+)\\.(\\d+)(['\"])")
+
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+              match = pattern.search(text)
+              if not match:
+                  raise SystemExit(f"APP_VERSION tidak ditemukan di {path}")
+              versions.append(tuple(map(int, match.groups()[1:4])))
+
+          current = max(versions)
+          major, minor, patch = current
+          if patch < 9:
+              patch += 1
+          elif minor < 9:
+              minor += 1
+              patch = 0
+          else:
+              major += 1
+              minor = 0
+              patch = 0
+          new_version = f"{major}.{minor}.{patch}"
+
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+              updated, count = pattern.subn(
+                  lambda m: f"{m.group(1)}{new_version}{m.group(5)}",
+                  text,
+                  count=1
+              )
+              if count != 1:
+                  raise SystemExit(f"Gagal memperbarui Version di {path}")
+              path.write_text(updated, encoding="utf-8")
+
+          print(f"Version aplikasi diperbarui menjadi {new_version}")
+          PY
+
+      - name: Commit updated version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Version sudah sesuai; tidak ada perubahan."
+            exit 0
+          fi
+          git add index.html admin.html
+          git commit -m "chore: auto bump app version [skip ci]"
+          git push origin HEAD:main
