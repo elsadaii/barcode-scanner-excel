@@ -79,7 +79,7 @@ class MainActivity : AppCompatActivity() {
         }
         webView.addJavascriptInterface(NativeScannerBridge(), "VeltrixNativeScanner")
         setContentView(webView)
-        webView.loadUrl("https://elsadaii.github.io/barcode-scanner-excel/?native=1&appv=${BuildConfig.VERSION_CODE}")
+        webView.loadUrl("https://elsadaii.github.io/barcode-scanner-excel/?native=1&refresh=${System.currentTimeMillis()}")
         appUpdater = AppUpdater(this)
         appUpdater?.checkForUpdate()
     }
