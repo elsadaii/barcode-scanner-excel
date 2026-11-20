@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <title>Barcode Scanner — UPC & Article</title>
-  <link rel="icon" type="image/webp" href="./barcode-mascot.webp?v=1.1.3">
+  <meta name="theme-color" content="#07142b">
+  <meta name="application-name" content="VELTRIX">
+  <title>VELTRIX — Product Scanner</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307142b'/%3E%3Cpath d='M7 10h14l11 22 11-22h14L32 56 7 10Z' fill='%2325d9ff'/%3E%3C/svg%3E">
   <style>
 :root{--bg:#f4f2ec;--panel:#fffefa;--ink:#202b27;--muted:#77817a;--line:#e8e4da;--navy:#172a24;--blue:#245747;--green:#2c7658;--red:#a94c43;--shadow:0 18px 48px rgba(27,40,33,.075);--gold:#c6a36a}
 *{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}
@@ -172,6 +173,179 @@ body{
 .result-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;color:#68756c;font-size:11px;font-weight:700}
 .result-pagination-controls{display:flex;gap:7px}
 .result-pagination-controls .btn{margin:0;padding:8px 12px;font-size:11px}
+
+/* VELTRIX brand system — navy / electric blue */
+:root{
+ --bg:#07111f;--panel:#0e1b30;--ink:#eaf2ff;--muted:#9aacc7;
+ --line:#243b5e;--navy:#07142b;--blue:#167cff;--green:#27d987;
+ --red:#ff7185;--shadow:0 20px 55px rgba(0,0,0,.32);--gold:#f0b74f;
+ --electric:#24d4ff;
+}
+body{
+ color:var(--ink);
+ background:radial-gradient(ellipse at 10% -8%,rgba(20,112,255,.20),transparent 35%),
+ radial-gradient(ellipse at 92% 12%,rgba(18,199,255,.10),transparent 31%),#07111f;
+}
+.top{
+ background:linear-gradient(118deg,#050d1d 0%,#091a36 55%,#0b2a55 100%);
+ border-bottom:1px solid rgba(36,180,255,.35);
+ box-shadow:0 12px 34px rgba(0,0,0,.28);
+}
+.top:before{
+ border-color:rgba(37,169,255,.22);
+ box-shadow:0 0 0 42px rgba(27,116,255,.045),0 0 0 86px rgba(27,116,255,.025);
+}
+.top:after{
+ content:"";position:absolute;inset:auto 0 0;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(36,212,255,.9),transparent);
+}
+.brand{gap:14px}
+.logo{
+ display:grid;place-items:center;
+ background:linear-gradient(145deg,#102e5c,#07142b);
+ border:1px solid rgba(65,193,255,.55);
+ box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 22px rgba(19,132,255,.22);
+}
+.logo-mark{display:block;width:35px;height:35px;filter:drop-shadow(0 0 7px rgba(24,193,255,.52))}
+.brand h1{
+ color:#f5f9ff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+ font-size:27px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;
+ text-shadow:0 0 22px rgba(35,154,255,.22);
+}
+.brand p{color:#9ec9ef;font-size:10px;font-weight:750;letter-spacing:.17em;text-transform:uppercase}
+.small-btn{
+ color:#eaf5ff;background:rgba(22,124,255,.12);
+ border-color:rgba(74,174,255,.34);
+}
+.small-btn:hover{background:rgba(22,124,255,.24)}
+.access-notice{background:rgba(10,36,72,.92);border-color:rgba(68,168,255,.35);color:#d9edff}
+.menu-dropdown{
+ background:linear-gradient(145deg,#10284c,#08172d);
+ border-color:rgba(67,167,255,.28);
+ box-shadow:0 18px 38px rgba(0,0,0,.45);
+}
+.tab{background:rgba(255,255,255,.035);border-color:rgba(118,168,220,.20);color:#c8d9f1}
+.tab:hover{background:rgba(33,135,255,.15)}
+.tab.active{
+ background:linear-gradient(135deg,#1598ff,#145be5);
+ border-color:#42caff;color:#fff;
+ box-shadow:0 0 20px rgba(18,125,255,.30),inset 0 1px rgba(255,255,255,.22);
+}
+.panel,.pin-card{
+ color:var(--ink);
+ background:linear-gradient(155deg,#101f37 0%,#0b172a 100%);
+ border:1px solid rgba(77,125,184,.32);
+ box-shadow:0 18px 46px rgba(0,0,0,.26),inset 0 1px rgba(255,255,255,.025);
+}
+.section-head h2,#adminPage h2,#adminPage h3{color:#edf5ff}
+.section-head p,.hint,.footer{color:#9aacc7}
+.section-head b,.result-title{color:#9bcfff}
+.form-grid label,.edit-form label,.pin-card label{color:#b5c9e4}
+.btn{box-shadow:0 3px 10px rgba(0,0,0,.14)}
+.primary{
+ color:#fff;background:linear-gradient(135deg,#168eff,#1458df);
+ border-color:rgba(93,207,255,.55);
+ box-shadow:0 7px 20px rgba(15,111,255,.24);
+}
+.primary:hover:not(:disabled){background:linear-gradient(135deg,#32a7ff,#176bea)}
+.dark{background:linear-gradient(135deg,#18375f,#0c1e39);color:#edf6ff;border-color:#315b8d}
+.dark:hover:not(:disabled){background:#1d4776}
+.light{background:#142947;color:#dcecff;border-color:#31537c}
+.light:hover:not(:disabled){background:#1b3a65}
+.danger{background:#3b1b2b;color:#ffb5c0;border-color:#78384c}
+.manual input,.file-input,.text-input,.edit-form input,.pin-card input,
+input:not([type="checkbox"]):not([type="radio"]),textarea,select{
+ color:#edf5ff;background:#09172b;border:1px solid #29486f;
+}
+.manual input::placeholder,.text-input::placeholder,input::placeholder,textarea::placeholder{color:#7188a8}
+.manual input:focus,.file-input:focus,.text-input:focus,.edit-form input:focus,.pin-card input:focus,
+input:not([type="checkbox"]):not([type="radio"]):focus,textarea:focus,select:focus{
+ border-color:#27baff;box-shadow:0 0 0 4px rgba(22,139,255,.17);outline:none;
+}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+ outline:3px solid rgba(37,191,255,.45);outline-offset:2px;
+}
+.camera-wrap{
+ background:radial-gradient(ellipse at center,#102b4c,#030a16 82%);
+ border-color:#24518a;box-shadow:inset 0 0 36px rgba(0,0,0,.42);
+}
+.camera-placeholder{color:#dcecff}
+.camera-placeholder .cam-icon{color:#39caff}
+.camera-placeholder small{color:#8eacca}
+.scan-frame{border-color:#50cfff}
+.result-card,.edit-item{
+ color:#eaf2ff;background:linear-gradient(145deg,#132644,#0d1b31);
+ border-color:#2b4b74;box-shadow:0 8px 20px rgba(0,0,0,.2);
+}
+.result-card h3,.edit-item h3{color:#f1f7ff}
+.field{
+ background:#0a1a30;border-color:#25466e;
+}
+.field span{color:#8fa9c9}
+.field strong{color:#e5f0ff}
+.product-photo,.photo-preview,.result-table-photo{
+ background:#f7f9fc;border-color:#334f72;
+}
+.photo-field{background:#0b1b31;border-color:#31577f}
+.empty{color:#9aacc7;background:#0b1a2e;border-color:#2b4b74}
+.admin-stat .stat,.stat{
+ color:#eaf2ff;background:linear-gradient(145deg,#142a49,#0b1b32);
+ border:1px solid #294b73;
+}
+.stat span{color:#9ab2d1}
+.stat strong{color:#53c9ff}
+.file-drop{
+ background:linear-gradient(145deg,#102541,#0b1a2e);
+ border-color:#3470a8;
+}
+.file-drop .up{color:#47c7ff}
+.file-drop strong{color:#eaf4ff}
+.file-drop p{color:#9aacc7}
+.chip{background:#102b49;color:#b9e4ff;border-color:#285886}
+.warning-note{
+ background:#332a19;border-color:#7b6331;color:#f5d99d;
+}
+.status.info{background:#102b49;color:#bfe5ff;border-color:#2b6497}
+.status.ok{background:#0d342c;color:#a9f3d1;border-color:#267b60}
+.status.warn{background:#3a2c16;color:#f7dfa6;border-color:#80602a}
+.status.error{background:#3c1d2b;color:#ffbdc7;border-color:#8a4052}
+.progress{background:#172b47}
+.progress>div{background:linear-gradient(90deg,#147bff,#35d7ff)}
+.login-brand{
+ background:linear-gradient(145deg,#123f76,#0b1b32);
+ border:1px solid rgba(67,185,255,.38);color:#53cfff;
+ box-shadow:0 0 24px rgba(20,125,255,.18);
+}
+.pin-card{border-color:#31527b}
+.pin-card h2{color:#f0f6ff}
+.pin-card p{color:#a8bbd6}
+.pin-card input{background:#071529}
+.pin-error{color:#ff899c}
+.result-view-label,.result-pagination{color:#a5bad4}
+.result-view-option{
+ background:#0d2039;color:#cfe5ff;border-color:#2c4e76;
+}
+.result-view-option.active{
+ background:linear-gradient(135deg,#168eff,#1458df);border-color:#46c9ff;color:#fff;
+}
+.result-table-wrap{background:#0b1a2e;border-color:#2a4b72}
+.result-table th{background:#142c4b;color:#bfe3ff;border-color:#31557f}
+.result-table td{color:#e2edfb;border-color:#213d60}
+.result-table tbody tr:nth-child(even){background:#10223b}
+.result-pagination-controls .btn{color:#eaf2ff}
+a{color:#68bdff}
+@media(hover:hover){
+ .panel{transition:box-shadow .22s ease,transform .22s ease}
+ .result-card:hover,.edit-item:hover{box-shadow:0 14px 30px rgba(0,0,0,.32);transform:translateY(-1px)}
+}
+@media(max-width:600px){
+ .brand h1{font-size:22px;letter-spacing:.12em}
+ .brand p{font-size:9px;letter-spacing:.13em}
+ .panel{border-radius:17px}
+ .section-head h2{font-size:22px}
+}
+@media(prefers-reduced-motion:reduce){.logo-mark{filter:none}}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>
@@ -179,7 +353,7 @@ body{
 <body>
   <header class="top"><div class="top-inner">
     <div class="header-row">
-      <div class="brand"><div class="logo"><img src="./barcode-mascot.webp?v=1.1.3" alt="Barcode Scanner"></div><div class="brand-copy"><h1>Barcode Scanner</h1><p>Pencarian data melalui UPC dan Article</p></div><button class="small-btn" id="loginAdminEntry" type="button">Login Admin</button><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
+      <div class="brand"><div class="logo"><svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs><linearGradient id="veltrix-mark-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#25d9ff"/><stop offset="1" stop-color="#2464ff"/></linearGradient></defs><path d="M7 10h14l11 22 11-22h14L32 56 7 10Z" fill="url(#veltrix-mark-gradient)"/><path d="M32 32 42 11h14L32 56" fill="none" stroke="#9bf1ff" stroke-width="2.5" stroke-linejoin="round" opacity=".9"/></svg></div><div class="brand-copy"><h1>VELTRIX</h1><p>Find. Manage. Control.</p></div><button class="small-btn" id="loginAdminEntry" type="button">Login Admin</button><button class="small-btn menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="appTabs" aria-label="Buka menu" hidden><span class="menu-glyph">☰</span> Menu</button></div>
     </div>
     <nav class="tabs menu-dropdown" id="appTabs" aria-label="Navigasi aplikasi" hidden><span class="user-email menu-user" id="userEmail"></span><button class="tab active" id="tabScanner" type="button">⌗ Scanner</button><button class="tab" id="tabAdmin" type="button" hidden>⚙ Admin Data</button><button class="tab" id="changePinBtn" type="button" hidden>🔢 Ganti PIN Database</button><button class="tab" id="resetPasswordBtn" type="button">🔐 Reset Password</button><button class="tab menu-logout" id="logoutBtn" type="button">↪ Keluar</button></nav>
     <div id="accessNotice" class="access-notice" hidden role="status"></div>
@@ -188,7 +362,7 @@ body{
   <main class="app">
     <section id="authPage" class="panel login-card" hidden>
       <div class="login-brand">🔐</div>
-      <div class="section-head"><div><h2>Masuk ke Barcode Scanner</h2></div></div>
+      <div class="section-head"><div><h2>Masuk ke VELTRIX</h2></div></div>
       <div class="form-grid">
         <div><label for="loginEmail">Email</label><input class="text-input" id="loginEmail" type="email" autocomplete="username" placeholder="nama@email.com"></div>
         <div><label for="loginPassword">Password</label><input class="text-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Password akun"></div>
@@ -244,7 +418,7 @@ body{
         <div class="actions"><button class="btn danger" id="pinReset" type="button" hidden>Reset PIN + Hapus Database</button></div>
       </section>
     </div>
-    <div class="footer">Barcode Scanner · Database UPC & Article</div>
+    <div class="footer">VELTRIX · Find. Manage. Control.</div>
     <div class="status info" id="catalogStatus" role="status">Menghubungkan ke database…</div>
     </div>
   </main>
