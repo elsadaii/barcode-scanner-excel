@@ -449,6 +449,8 @@ a{color:#68bdff}
   (() => {
     'use strict';
     const $ = id => document.getElementById(id);
+    function scannerReturnUrl(reason){const nativeMode=!!window.VeltrixNativeScanner;return './index.html?'+(nativeMode?'native=1&':'')+'from='+encodeURIComponent(reason);}
+    document.querySelector('a[href="./index.html"]')?.addEventListener('click',event=>{event.preventDefault();window.location.href=scannerReturnUrl('admin-back-to-scanner');});
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const APP_VERSION = '1.2.3';
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
@@ -585,7 +587,7 @@ a{color:#68bdff}
       try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}
       stopCamera();
       supabase.auth.signOut().catch(()=>{});
-      window.location.replace('./index.html?from=admin-timeout');
+      window.location.replace(scannerReturnUrl('admin-timeout'));
     }
     function scheduleAdminIdleTimeout(){
       if(!isAdmin)return;
@@ -659,7 +661,7 @@ a{color:#68bdff}
     }
     $('loginBtn').addEventListener('click',signIn);
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
-    $('logoutBtn').addEventListener('click',async()=>{clearAdminIdleTimer();try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}stopCamera();$('logoutBtn').disabled=true;const {error}=await supabase.auth.signOut();if(error){$('logoutBtn').disabled=false;showStatus($('cameraStatus'),'error','Gagal keluar: '+error.message);return;}window.location.replace('./index.html?from=admin-logout');});
+    $('logoutBtn').addEventListener('click',async()=>{clearAdminIdleTimer();try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}stopCamera();$('logoutBtn').disabled=true;const {error}=await supabase.auth.signOut();if(error){$('logoutBtn').disabled=false;showStatus($('cameraStatus'),'error','Gagal keluar: '+error.message);return;}window.location.replace(scannerReturnUrl('admin-logout'));});
 
     async function refreshCatalog(quiet=false){
       if(!quiet)showStatus($('catalogStatus'),'info','Mengambil informasi database…');
