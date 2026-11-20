@@ -442,7 +442,7 @@ a{color:#68bdff}
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const APP_VERSION = '1.2.0';
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
-    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null, latestImportId = null;
+    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null, latestImportId = null; let statusChannel=null,statusRefreshTimer=null,statusRefreshRunning=false;
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
     const clean = v => v == null ? '' : String(v).trim();
     const norm = v => clean(v).toLocaleUpperCase('en-US');
@@ -635,6 +635,7 @@ a{color:#68bdff}
       try{await loadGoogleDriveSettings();}
       catch(error){showStatus($('googleDriveStatus'),'error','Gagal mengambil pengaturan Google Drive dari database: '+(error.message||error));}
       await refreshCatalog();
+      startServerStatusUpdates();
       await refreshBackupList();
       await detectLegacyData();
     }
@@ -650,8 +651,8 @@ a{color:#68bdff}
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
     $('logoutBtn').addEventListener('click',async()=>{clearAdminIdleTimer();try{localStorage.removeItem(ADMIN_ACTIVITY_KEY);}catch(e){}stopCamera();$('logoutBtn').disabled=true;const {error}=await supabase.auth.signOut();if(error){$('logoutBtn').disabled=false;showStatus($('cameraStatus'),'error','Gagal keluar: '+error.message);return;}window.location.replace('./index.html?from=admin-logout');});
 
-    async function refreshCatalog(){
-      showStatus($('catalogStatus'),'info','Mengambil informasi database…');
+    async function refreshCatalog(quiet=false){
+      if(!quiet)showStatus($('catalogStatus'),'info','Mengambil informasi database…');
       try{
         const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
         if(stateError)throw stateError;
@@ -667,6 +668,28 @@ a{color:#68bdff}
         const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Server: Admin Online · Version: ${APP_VERSION}`);showStatus($('databaseUpdateStatus'),'ok',`Database diperbarui pada: ${uploadDateLabel}${uploadTimeLabel?', '+uploadTimeLabel+' WIB':''} · ${Number(info.total_rows||0).toLocaleString('id-ID')} data.`);
         renderAdmin();
       }catch(e){metadata=null;products=[];$('toggleDatabase').disabled=true;showStatus($('catalogStatus'),'error','Status Admin: Gagal memeriksa koneksi.');showStatus($('databaseUpdateStatus'),'error','Gagal mengambil informasi pembaruan database: '+(e.message||e));}
+    }
+
+    function startServerStatusUpdates(){
+      if(statusChannel||!supabase)return;
+      const refreshQuietly=async()=>{
+        if(statusRefreshRunning||document.hidden||!navigator.onLine)return;
+        statusRefreshRunning=true;
+        try{await refreshCatalog(true);}finally{statusRefreshRunning=false;}
+      };
+      statusChannel=supabase.channel('veltrix-server-status-admin')
+        .on('postgres_changes',{event:'*',schema:'public',table:'barcode_catalog_state'},refreshQuietly)
+        .on('postgres_changes',{event:'*',schema:'public',table:'barcode_imports'},refreshQuietly)
+        .subscribe();
+      statusRefreshTimer=setInterval(refreshQuietly,15000);
+      window.addEventListener('online',refreshQuietly);
+      window.addEventListener('offline',()=>showStatus($('catalogStatus'),'error','Server: Perangkat tidak terhubung ke internet · Version: '+APP_VERSION));
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshQuietly();});
+      window.addEventListener('pagehide',()=>{
+        if(statusRefreshTimer)clearInterval(statusRefreshTimer);
+        if(statusChannel)supabase.removeChannel(statusChannel);
+        statusChannel=null;
+      },{once:true});
     }
 
     function parseCSV(text){
