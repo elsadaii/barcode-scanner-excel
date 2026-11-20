@@ -452,7 +452,7 @@ a{color:#68bdff}
     function scannerReturnUrl(reason){const nativeMode=!!window.VeltrixNativeScanner;return './index.html?'+(nativeMode?'native=1&':'')+'from='+encodeURIComponent(reason);}
     document.querySelector('a[href="./index.html"]')?.addEventListener('click',event=>{event.preventDefault();window.location.href=scannerReturnUrl('admin-back-to-scanner');});
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
-    const APP_VERSION = '1.2.3';
+    const APP_VERSION = '1.2.4';
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
     let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null, latestImportId = null; let statusChannel=null,statusRefreshTimer=null,statusRefreshRunning=false;
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
