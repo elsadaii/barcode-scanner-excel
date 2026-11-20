@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, ScannerActivity::class.java))
     }
 
-    private fun notifyCameraClosed() {
+    fun notifyCameraClosed() {
         webView.evaluateJavascript("window.dispatchEvent(new Event('veltrix-native-camera-closed'))", null)
     }
 
