@@ -38,7 +38,7 @@ class ScannerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        scannerActivity = this
+        MainActivity.scannerActivity = this
         val root = FrameLayout(this).apply { setBackgroundColor(android.graphics.Color.BLACK) }
         previewView = PreviewView(this).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
         root.addView(previewView, FrameLayout.LayoutParams(-1, -1))
@@ -75,9 +75,7 @@ class ScannerActivity : AppCompatActivity() {
                         val value = barcodes.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
                         if (!value.isNullOrBlank() && delivered.compareAndSet(false, true)) {
                             runOnUiThread {
-                                (MainActivity.scannerActivity?.let { it } )
-                                (applicationContext as? android.app.Application)
-                                MainActivityBridge.deliver(this, value)
+                                MainActivity.current?.deliverScan(value)
                                 finish()
                             }
                         }
@@ -92,21 +90,10 @@ class ScannerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        scannerActivity = null
+        MainActivity.scannerActivity = null
         runCatching { scanner.close() }
         executor.shutdown()
         super.onDestroy()
     }
 
-    companion object { var scannerActivity: ScannerActivity? = null }
-}
-
-private object MainActivityBridge {
-    fun deliver(activity: ScannerActivity, value: String) {
-        val main = activity as? android.content.Context
-        val app = activity.application
-        val field = MainActivity::class.java
-        // MainActivity is the only host of the WebView; use its active instance.
-        MainActivity.current?.deliverScan(value)
-    }
 }
