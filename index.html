@@ -377,6 +377,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
 .notification-switch[aria-checked="true"] span{transform:translateX(20px)}
 .notification-switch:disabled{opacity:.7;cursor:wait}
 .notification-history-label{padding:13px 20px 0;color:#748176;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.notification-history-actions{padding:10px 20px 0;display:flex;justify-content:flex-end}.notification-history-actions .btn{min-height:35px;padding:8px 12px;font-size:11px}
 @media(max-width:600px){.notification-dialog{max-height:82vh;border-radius:17px}.notification-dialog-head{padding:16px}.notification-list{padding:8px 13px 13px}}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -395,7 +396,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     <section class="notification-dialog" role="dialog" aria-modal="true" aria-labelledby="notificationHeading">
       <div class="notification-dialog-head"><div><h2 id="notificationHeading">Notifikasi</h2><p>Atur notifikasi dan lihat informasi terbaru</p></div><button class="notification-close" id="closeNotifications" type="button" aria-label="Tutup">×</button></div>
       <div class="notification-settings"><div><strong>Notifikasi</strong><small id="notificationToggleStatus">Nonaktif</small></div><button class="notification-switch" id="toggleNotifications" type="button" role="switch" aria-checked="false" aria-label="Aktifkan atau nonaktifkan notifikasi"><span></span></button></div>
-      <div class="notification-history-label">Riwayat Notifikasi</div><div class="notification-list" id="notificationList"><div class="notification-empty">Memuat riwayat notifikasi…</div></div>
+      <div class="notification-history-label">Riwayat Notifikasi</div><div class="notification-history-actions"><button class="btn danger" id="clearNotificationHistory" type="button" hidden>Hapus Semua Riwayat</button></div><div class="notification-list" id="notificationList"><div class="notification-empty">Memuat riwayat notifikasi…</div></div>
     </section>
   </div>
   <main class="app">
@@ -1235,8 +1236,37 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       }
       $('notificationBell').addEventListener('click',async()=>{
         renderNotificationToggle();
+        $('clearNotificationHistory').hidden=!isAdmin;
         $('notificationBackdrop').hidden=false;
         try{await loadNotificationHistory(true);}catch(error){$('notificationList').innerHTML='<div class="notification-empty">Riwayat notifikasi gagal dimuat. Periksa koneksi internet.</div>';}
+      });
+      $('clearNotificationHistory').addEventListener('click',async()=>{
+        if(!isAdmin){$('clearNotificationHistory').hidden=true;return;}
+        if(!window.confirm('Hapus SEMUA riwayat notifikasi dari database? Riwayat akan hilang untuk seluruh pengguna VELTRIX dan tidak dapat dipulihkan.'))return;
+        const button=$('clearNotificationHistory');
+        button.disabled=true;button.textContent='Menghapus…';
+        try{
+          const {data:sessionData,error:sessionError}=await supabase.auth.getSession();
+          if(sessionError)throw sessionError;
+          const accessToken=sessionData?.session?.access_token;
+          if(!accessToken)throw new Error('Sesi Admin berakhir. Silakan login kembali.');
+          const response=await fetch(cfg.url+'/functions/v1/clear-notification-history',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':cfg.publishableKey,'Authorization':'Bearer '+accessToken},
+            body:JSON.stringify({})
+          });
+          const result=await response.json();
+          if(!response.ok||!result.ok)throw new Error(result.error||'Gagal menghapus riwayat notifikasi.');
+          localStorage.removeItem(READ_NOTIFICATIONS_KEY);
+          await loadNotificationHistory(false);
+          button.textContent='Riwayat Berhasil Dihapus';
+        }catch(error){
+          $('notificationList').innerHTML='<div class="notification-empty"></div>';
+          $('notificationList').firstChild.textContent=error.message||'Gagal menghapus riwayat notifikasi.';
+          button.textContent='Coba Hapus Lagi';
+        }finally{
+          button.disabled=false;
+        }
       });
       $('closeNotifications').addEventListener('click',()=>$('notificationBackdrop').hidden=true);
       $('notificationBackdrop').addEventListener('click',event=>{if(event.target===$('notificationBackdrop'))$('notificationBackdrop').hidden=true;});
