@@ -936,6 +936,7 @@ a{color:#68bdff}
     let googleAccessToken='';
     let googleAccessTokenExpiresAt=0;
     let googleAccessTokenClientId='';
+    // Android APK requests Google Drive permission through the native authorization flow.
     async function requestGoogleDriveToken(clientId){
       const now=Date.now();
       if(googleAccessToken&&googleAccessTokenClientId===clientId&&googleAccessTokenExpiresAt>now+60000)return googleAccessToken;
