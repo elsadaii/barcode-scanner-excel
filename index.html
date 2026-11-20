@@ -390,6 +390,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
             <div class="scan-laser" id="scanLaser" aria-hidden="true"></div>
           </div>
           <div class="actions"><button class="btn primary" id="startCamera" type="button">▣ Mulai Scan</button><button class="btn light" id="stopCamera" type="button" disabled>Hentikan</button></div>
+          <div class="actions" id="webPushActions" hidden><button class="btn light" id="enableWebPush" type="button">🔔 Aktifkan Notifikasi</button></div><div class="status" id="webPushStatus" role="status"></div>
           <div class="status" id="cameraStatus" role="status"></div>
           <form class="manual" id="manualForm"><input id="manualCode" autocomplete="off" placeholder="Atau ketik / tempel UPC atau Article…" aria-label="Masukkan kode barcode"><button class="btn dark" type="submit">Cari</button></form>
         </div>
@@ -1050,6 +1051,41 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     function stopCamera(){if(window.VeltrixNativeScanner?.stop&&scanning){try{window.VeltrixNativeScanner.stop();}catch(e){}}if($('cameraWrap'))$('cameraWrap').classList.remove('is-scanning','scan-success');scanning=false;if(scanFrame)cancelAnimationFrame(scanFrame);scanFrame=null;detector=null;if(zxingReader){try{zxingReader.reset();}catch(e){}zxingReader=null;}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}if($('video'))$('video').srcObject=null;if($('cameraPlaceholder'))$('cameraPlaceholder').hidden=false;if($('cameraWrap'))$('cameraWrap').hidden=true;if($('scanFrame'))$('scanFrame').style.display='none';if($('startCamera'))$('startCamera').disabled=false;if($('stopCamera'))$('stopCamera').disabled=true;}
     $('startCamera').addEventListener('click',startCamera);$('stopCamera').addEventListener('click',stopCamera);window.addEventListener('pagehide',stopCamera);
 
+    async function enableWebPush(){
+      const button=$('enableWebPush');
+      if(!('Notification' in window)||!('serviceWorker' in navigator)){showStatus($('webPushStatus'),'error','Browser ini tidak mendukung notifikasi web.');return;}
+      if(new URLSearchParams(location.search).get('native')==='1'){showStatus($('webPushStatus'),'info','APK menggunakan notifikasi Android bawaan.');return;}
+      button.disabled=true;
+      try{
+        const permission=await Notification.requestPermission();
+        if(permission!=='granted')throw new Error('Izin notifikasi belum diberikan.');
+        const [{initializeApp}, {getMessaging,getToken,isSupported}]=await Promise.all([
+          import('https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js'),
+          import('https://www.gstatic.com/firebasejs/13.4.0/firebase-messaging.js')
+        ]);
+        if(!(await isSupported()))throw new Error('Notifikasi Firebase tidak didukung oleh browser ini.');
+        const app=initializeApp({
+          apiKey:'AIzaSyCvFYHan3DwTfFty91t71gYcQIfXBpNXMk',
+          authDomain:'barcode-scanner-515214.firebaseapp.com',
+          projectId:'barcode-scanner-515214',
+          storageBucket:'barcode-scanner-515214.firebasestorage.app',
+          messagingSenderId:'653886610803',
+          appId:'1:653886610803:web:53595e92937750bf43b906',
+          measurementId:'G-CCSYNLP8QT'
+        });
+        const registration=await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        const messaging=getMessaging(app);
+        const token=await getToken(messaging,{vapidKey:'BGu0gcAYxP9ojBP70kNMThcqKox6c7-JRCy7aOF7sRbWKhEXLZB07idwQGj1Ffk6GdCxm8y1hzlz9UPfS9pit6o',serviceWorkerRegistration:registration});
+        if(!token)throw new Error('Browser belum memberikan token notifikasi.');
+        const response=await fetch(cfg.url+'/functions/v1/register-push-token',{method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.publishableKey},body:JSON.stringify({token,platform:'web'})});
+        const result=await response.json();
+        if(!response.ok||!result.ok)throw new Error(result.error||'Gagal mendaftarkan perangkat.');
+        showStatus($('webPushStatus'),'ok','Notifikasi berhasil diaktifkan pada perangkat ini.');
+        button.textContent='✓ Notifikasi Aktif';
+      }catch(error){showStatus($('webPushStatus'),'error','Gagal mengaktifkan notifikasi: '+(error.message||error));button.disabled=false;}
+    }
+    $('enableWebPush').addEventListener('click',enableWebPush);
+
     async function init(){
       $('appContent').hidden=false;$('scannerPage').hidden=false;
       if(!cfg.url||!cfg.publishableKey||String(cfg.url).includes('GANTI_')||String(cfg.publishableKey).includes('GANTI_')){
@@ -1060,6 +1096,11 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       await refreshCatalog();
       startServerStatusUpdates();
+      if(new URLSearchParams(location.search).get('native')!=='1' && 'Notification' in window){
+        $('webPushActions').hidden=false;
+        if(Notification.permission==='granted')$('enableWebPush').textContent='🔔 Daftarkan Perangkat Ini';
+      }
+
     }
     init().catch(e=>showStatus($('catalogStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
   })();
