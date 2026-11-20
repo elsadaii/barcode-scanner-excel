@@ -48,7 +48,7 @@ jobs:
           pattern = re.compile(r"(const\s+APP_VERSION\s*=\s*['\"])(\d+)\.(\d+)\.(\d+)(['\"])")
 
           def next_version(version):
-              major, minor, patch = map(int, version)
+              major, minor, patch = map(int, version.split("."))
               if patch < 9:
                   patch += 1
               elif minor < 9:
