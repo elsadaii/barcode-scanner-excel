@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
                         deliverGoogleDriveResult(null, "Google meminta verifikasi tambahan, tetapi dialog izin tidak tersedia.")
                     } else {
                         googleDriveAuthorizationLauncher.launch(
-                            IntentSenderRequest.Builder(pendingIntent).build()
+                            IntentSenderRequest.Builder(pendingIntent.intentSender).build()
                         )
                     }
                 } else {
