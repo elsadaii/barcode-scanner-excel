@@ -90,6 +90,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         @JavascriptInterface fun stop() { runOnUiThread { scannerActivity?.finish() } }
+        @JavascriptInterface fun checkForAppUpdate() {
+            runOnUiThread { appUpdater?.checkForUpdate(manual = true) }
+        }
         @JavascriptInterface fun notificationsEnabled(): Boolean =
             VeltrixFirebaseMessagingService.notificationsEnabled(applicationContext)
         @JavascriptInterface fun setNotificationsEnabled(enabled: Boolean): Boolean {
