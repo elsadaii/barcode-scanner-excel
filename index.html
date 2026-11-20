@@ -976,8 +976,6 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
         scanning=true;
         $('startCamera').disabled=true;
         $('stopCamera').disabled=false;
-        const activeLabel=videoTrack?.label||'kamera belakang';
-        showStatus($('cameraStatus'),'info','Menggunakan: '+activeLabel+'.');
         // Terapkan autofocus setelah preview terlihat agar tidak menunda pembukaan kamera.
         if(videoTrack)enableCameraFocus(videoTrack);
         if('BarcodeDetector'in window){
