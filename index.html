@@ -43,7 +43,7 @@ button,input{font:inherit}button{transition:transform .18s ease,background .18s 
 .file-drop{border:1px dashed #c9c4b5;border-radius:14px;padding:23px 18px;text-align:center;background:linear-gradient(145deg,#fbfaf6,#f5f3ec)}.file-drop .up{font-size:30px;color:#9b7a48}.file-drop strong{display:block;margin:8px 0 5px;color:#2e4437;font-size:14px}.file-drop p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.file-drop input{margin-top:15px;max-width:100%;font-size:12px}
 .columns{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.chip{background:#eff2eb;color:#405b49;border:1px solid #e2e9df;border-radius:30px;padding:6px 10px;font-size:11px;font-weight:700}.warning-note{background:#fbf5e9;border:1px solid #efe1c4;color:#765b2c;padding:13px;border-radius:11px;font-size:12px;line-height:1.6;margin-top:15px}
 .footer{text-align:center;color:#8b9187;font-size:11px;letter-spacing:.035em;padding:10px 0 20px}
-.app-update-area{display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:12px}.app-update-area .btn{min-height:38px;padding:9px 15px;font-size:12px}.app-update-status{font-size:11px;color:inherit;min-height:0}.form-grid{display:grid;gap:13px}.form-grid label{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:#68756c;margin-bottom:7px}
+.app-update-area{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin-top:4px}.about-app-panel .section-head{margin-bottom:13px}.about-app-panel .app-update-status{color:var(--muted)}.app-update-area .btn{min-height:38px;padding:9px 15px;font-size:12px}.app-update-status{font-size:11px;color:inherit;min-height:0}.form-grid{display:grid;gap:13px}.form-grid label{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:#68756c;margin-bottom:7px}
 .login-card{max-width:490px;margin:30px auto}.login-brand{width:58px;height:58px;margin:2px auto 18px;display:grid;place-items:center;border-radius:18px;background:#edf1e9;color:#46644f;font-size:27px}.login-card .section-head{text-align:center;justify-content:center}.login-card .btn{width:100%;margin-top:15px;padding:13px}.login-card .hint{margin-top:15px;text-align:center}
 .progress{height:7px;background:#ecebe4;border-radius:50px;overflow:hidden;margin-top:11px}.progress>div{height:100%;width:0;background:linear-gradient(90deg,#497b5d,#b69a68);transition:width .15s}#adminPage>.panel>h2{color:#243b2e}
 @media(min-width:700px){.top{padding:29px 25px 23px}.app{padding:32px 22px 60px}.panel{padding:26px}.camera-wrap{aspect-ratio:16/8;max-height:430px}.product-grid{grid-template-columns:repeat(2,1fr)}}
@@ -430,7 +430,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
           <div class="status" id="cameraStatus" role="status"></div>
           <form class="manual" id="manualForm"><input id="manualCode" autocomplete="off" placeholder="Atau ketik / tempel UPC atau Article…" aria-label="Masukkan kode barcode"><button class="btn dark" type="submit">Cari</button></form>
         </div>
-        <div class="panel" id="resultsPanel"><div class="section-head"><div><h2>Hasil pencarian</h2><p id="resultSubtitle">Hasil scan akan ditampilkan di sini.</p></div></div><div class="empty" id="emptyResult">Belum ada barcode yang dipindai.</div><div id="results"></div></div>
+        <div class="panel" id="resultsPanel"><div class="section-head"><div><h2>Hasil pencarian</h2><p id="resultSubtitle">Hasil scan akan ditampilkan di sini.</p></div></div><div class="empty" id="emptyResult">Belum ada barcode yang dipindai.</div><div id="results"></div></div><div class="panel about-app-panel" id="appAboutPanel" hidden><div class="section-head"><div><h2>Tentang Aplikasi</h2><p>Kelola versi VELTRIX dan periksa apakah pembaruan aplikasi tersedia.</p></div></div><div class="app-update-area" id="appUpdateArea"><button class="btn light" id="checkAppUpdate" type="button">↻ Periksa Update</button><div class="app-update-status" id="appUpdateStatus" role="status" aria-live="polite"></div></div></div>
       </section>
 
       <section id="adminPage" hidden>
@@ -459,7 +459,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
         <div class="actions"><button class="btn danger" id="pinReset" type="button" hidden>Reset PIN + Hapus Database</button></div>
       </section>
     </div>
-    <div class="footer">VELTRIX · Find. Manage. Control.<div class="app-update-area" id="appUpdateArea" hidden><button class="btn light" id="checkAppUpdate" type="button">↻ Periksa Update</button><div class="app-update-status" id="appUpdateStatus" role="status" aria-live="polite"></div></div></div>
+    <div class="footer">VELTRIX · Find. Manage. Control.</div>
     <div class="status info" id="catalogStatus" role="status">Menghubungkan ke database…</div>
     </div>
   </main>
@@ -1229,7 +1229,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
 
       const nativeApp=new URLSearchParams(location.search).get('native')==='1';
       if(nativeApp){
-        $('appUpdateArea').hidden=false;
+        $('appAboutPanel').hidden=false;
         $('checkAppUpdate').addEventListener('click',()=>{
           const button=$('checkAppUpdate');
           if(!window.VeltrixNativeScanner||typeof window.VeltrixNativeScanner.checkForAppUpdate!=='function'){
