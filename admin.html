@@ -822,7 +822,7 @@ a{color:#68bdff}
       showStatus($('backupStatus'),'ok','File backup JSON berhasil disiapkan: '+rows.length.toLocaleString('id-ID')+' data.');
     }
     async function restoreCatalogBackup(importId){
-      const info=await getImportInfo(importId);const rows=await loadCatalogRows(importId);
+      const info=await getImportInfo(importId);const rows=await loadCatalogRows(importId,info.total_rows);
       if(!rows.length||Number(info.total_rows||0)!==rows.length)throw new Error('Backup tidak lengkap atau jumlah datanya tidak cocok. Pemulihan dibatalkan.');
       const data=rows.map(p=>({UPC:clean(p.upc),Article:clean(p.article),'Article Description':clean(p.article_description),
         Stock:clean(p.stock),'Special Stock':clean(p.special_stock),image_path:p.image_path||null}));
