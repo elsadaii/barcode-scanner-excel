@@ -435,7 +435,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     const $ = id => document.getElementById(id);
     const EXPECTED = ['UPC','Article','Article Description','Stock','Special Stock'];
     const cfg = window.BARCODE_SUPABASE_CONFIG || {};
-    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null;
+    let supabase = null, currentUser = null, isAdmin = false, activeImportId = null, products = [], metadata = null; let statusChannel=null,statusRefreshTimer=null,statusRefreshRunning=false;
     let stream = null, detector = null, scanFrame = null, scanning = false, scanBusy = false, lastRead = '', lastReadAt = 0, zxingReader = null, legacyData = null;
     let resultViewMode='cards', currentFoundResults=[], currentResultPage=0;
     const clean = v => v == null ? '' : String(v).trim();
@@ -620,8 +620,8 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
     $('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
     $('logoutBtn').addEventListener('click',async()=>{stopCamera();const {error}=await supabase.auth.signOut();if(error)showStatus($('cameraStatus'),'error',error.message);else showLoggedOut('Anda sudah keluar.');});
 
-    async function refreshCatalog(){
-      showStatus($('catalogStatus'),'info','Mengambil informasi database…');
+    async function refreshCatalog(quiet=false){
+      if(!quiet)showStatus($('catalogStatus'),'info','Mengambil informasi database…');
       try{
         const {data:state,error:stateError}=await supabase.from('barcode_catalog_state').select('active_import_id').eq('singleton',true).maybeSingle();
         if(stateError)throw stateError;
@@ -633,6 +633,28 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
         const uploadedDate=new Date(info.uploaded_at);const uploadDateLabel=Number.isNaN(uploadedDate.getTime())?'Tanggal tidak tersedia':new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(uploadedDate);const uploadTimeLabel=Number.isNaN(uploadedDate.getTime())?'':new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Jakarta'}).format(uploadedDate);showStatus($('catalogStatus'),'ok',`Server: Online · Last Update: ${uploadDateLabel}${uploadTimeLabel?', '+uploadTimeLabel+' WIB':''} · Version: ${APP_VERSION}`);
         renderAdmin();
       }catch(e){metadata=null;products=[];activeImportId=null;showStatus($('catalogStatus'),'error',`Server: Gagal diperiksa · Version: ${APP_VERSION} · Detail: ${e.message||'Koneksi atau izin akses bermasalah'}`);}
+    }
+
+    function startServerStatusUpdates(){
+      if(statusChannel||!supabase)return;
+      const refreshQuietly=async()=>{
+        if(statusRefreshRunning||document.hidden||!navigator.onLine)return;
+        statusRefreshRunning=true;
+        try{await refreshCatalog(true);}finally{statusRefreshRunning=false;}
+      };
+      statusChannel=supabase.channel('veltrix-server-status-scanner')
+        .on('postgres_changes',{event:'*',schema:'public',table:'barcode_catalog_state'},refreshQuietly)
+        .on('postgres_changes',{event:'*',schema:'public',table:'barcode_imports'},refreshQuietly)
+        .subscribe();
+      statusRefreshTimer=setInterval(refreshQuietly,15000);
+      window.addEventListener('online',refreshQuietly);
+      window.addEventListener('offline',()=>showStatus($('catalogStatus'),'error','Server: Perangkat tidak terhubung ke internet · Version: '+APP_VERSION));
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshQuietly();});
+      window.addEventListener('pagehide',()=>{
+        if(statusRefreshTimer)clearInterval(statusRefreshTimer);
+        if(statusChannel)supabase.removeChannel(statusChannel);
+        statusChannel=null;
+      },{once:true});
     }
 
     function parseCSV(text){
@@ -1037,6 +1059,7 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       // Halaman pengguna hanya membaca katalog; tidak memakai sesi login Admin.
       supabase=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       await refreshCatalog();
+      startServerStatusUpdates();
     }
     init().catch(e=>showStatus($('catalogStatus'),'error','Aplikasi gagal dimulai: '+(e.message||e)));
   })();
