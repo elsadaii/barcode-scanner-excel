@@ -91,6 +91,7 @@ class ScannerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         MainActivity.scannerActivity = null
+        MainActivity.current?.notifyCameraClosed()
         runCatching { scanner.close() }
         executor.shutdown()
         super.onDestroy()
