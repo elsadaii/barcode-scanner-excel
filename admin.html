@@ -390,7 +390,7 @@ a{color:#68bdff}
               <div><label for="googleDriveFile">Link atau ID file Excel di Google Drive</label><input class="text-input" id="googleDriveFile" type="text" placeholder="Tempel link Google Drive atau ID file" autocomplete="off"></div>
             </div>
             <div class="actions"><button class="btn primary" id="syncGoogleDrive" type="button">☁ Sinkronkan dari Google Drive</button></div>
-            <p class="hint">Client ID dan ID file Excel disimpan di database Supabase, sehingga tersedia di browser/perangkat lain saat Admin login. Saat sinkronisasi, Sheet 2 harus berisi seluruh artikel lama dan baru. Data Article Description, Stock, dan Special Stock mengikuti Sheet 2; artikel baru ditambahkan ke Sheet 1. UPC dan foto yang sudah dikelola Admin dipertahankan. Sheet 1 menjadi sumber katalog VELTRIX. Jika Sheet 2 memakai rumus, pastikan Excel sudah menghitung ulang dan file sudah disimpan sebelum sinkronisasi. Setiap edit produk tetap memperbarui Excel di Drive dan database online.</p>
+            <p class="hint">Client ID dan ID file Excel disimpan di database Supabase, sehingga otomatis tersedia di browser/perangkat lain saat Admin login. File .xlsx/.xls tetap privat. Google meminta izin membaca dan memperbarui file. Setiap edit produk akan memperbarui Excel di Drive dan database online.</p>
             <div class="status" id="googleDriveStatus" role="status"></div>
           </div>
                     <div class="status" id="uploadStatus" role="status"></div>
@@ -964,79 +964,6 @@ a{color:#68bdff}
         }catch(error){reject(error);}
       });
     }
-    function buildMergedGoogleCatalog(sheet1Matrix,sheet2Matrix,databaseRows){
-      const current=rowsToProducts(sheet1Matrix),latest=rowsToProducts(sheet2Matrix);
-      const headerMap={};(sheet1Matrix[0]||[]).forEach((h,i)=>headerMap[norm(h)]=i);
-      const missing=EXPECTED.filter(h=>headerMap[norm(h)]===undefined);
-      if(missing.length)throw new Error('Header Sheet 1 tidak lengkap: '+missing.join(', ')+'.');
-      const articleIndex=headerMap[norm('Article')];
-      const sheet1Rows=new Map();
-      for(let r=1;r<sheet1Matrix.length;r++){
-        const row=sheet1Matrix[r]||[];
-        const hasData=EXPECTED.some(h=>clean(row[headerMap[norm(h)]] )!=='');
-        if(!hasData)continue;
-        const article=clean(row[articleIndex]),key=norm(article);
-        if(!key)throw new Error('Ada baris berisi data di Sheet 1 tanpa Article. Perbaiki dahulu sebelum sinkronisasi.');
-        if(sheet1Rows.has(key))throw new Error('Article duplikat di Sheet 1: '+article+'. Sinkronisasi dibatalkan.');
-        sheet1Rows.set(key,row.slice());
-      }
-      const latestByArticle=new Map();
-      latest.data.forEach(p=>{
-        const article=clean(p.Article),key=norm(article);
-        if(!key)throw new Error('Ada data di Sheet 2 tanpa Article. Setiap produk harus memiliki Article unik.');
-        if(latestByArticle.has(key))throw new Error('Article duplikat di Sheet 2: '+article+'. Sinkronisasi dibatalkan.');
-        latestByArticle.set(key,p);
-      });
-      const databaseByArticle=new Map();
-      (databaseRows||[]).forEach(p=>{
-        const article=clean(p.article),key=norm(article);
-        if(!key)throw new Error('Ada data katalog aktif tanpa Article. Sinkronisasi dibatalkan agar data lama aman.');
-        if(databaseByArticle.has(key))throw new Error('Article duplikat di database aktif: '+article+'. Hubungi Admin sebelum sinkronisasi.');
-        databaseByArticle.set(key,p);
-        if(!latestByArticle.has(key))throw new Error('Sheet 2 tidak memuat artikel lama '+article+'. Tidak ada data yang diubah. Pastikan Sheet 2 berisi seluruh katalog lama dan baru.');
-      });
-      for(const [key,row] of sheet1Rows.entries()){
-        const article=clean(row[articleIndex]);
-        if(!latestByArticle.has(key))throw new Error('Sheet 2 tidak memuat artikel yang ada di Sheet 1: '+article+'. Tidak ada data yang diubah.');
-      }
-
-      const outputMatrix=[(sheet1Matrix[0]||[]).slice()];
-      const data=[];
-      const processed=new Set();
-      function appendProduct(source,oldRow){
-        const key=norm(source.Article),saved=databaseByArticle.get(key);
-        const previousRow=oldRow||null;
-        const oldUpcIndex=headerMap[norm('UPC')];
-        const preservedUpc=saved?clean(saved.upc):previousRow?clean(previousRow[oldUpcIndex]):'';
-        const item={
-          UPC:preservedUpc||clean(source.UPC),
-          Article:clean(source.Article),
-          'Article Description':clean(source['Article Description']),
-          Stock:clean(source.Stock),
-          'Special Stock':clean(source['Special Stock'])
-        };
-        if(saved)item.image_path=saved.image_path||null;
-        const row=previousRow?previousRow.slice():new Array(outputMatrix[0].length).fill('');
-        EXPECTED.forEach(h=>{row[headerMap[norm(h)]]=item[h];});
-        outputMatrix.push(row);
-        data.push(item);
-        processed.add(key);
-      }
-
-      current.data.forEach(p=>{
-        const key=norm(p.Article),source=latestByArticle.get(key),oldRow=sheet1Rows.get(key);
-        appendProduct(source,oldRow);
-      });
-      let added=0;
-      latest.data.forEach(p=>{
-        const key=norm(p.Article);
-        if(processed.has(key))return;
-        appendProduct(p,null);added++;
-      });
-      if(!data.length)throw new Error('Tidak ada data yang dapat digabungkan.');
-      return {matrix:outputMatrix,data,headers:current.headers,added};
-    }
-
     async function syncFromGoogleDrive(){
       if(!isAdmin)throw new Error('Hanya Admin yang dapat menyinkronkan katalog.');
       const clientId=clean($('googleClientId').value),fileId=extractDriveFileId($('googleDriveFile').value);
@@ -1059,35 +986,13 @@ a{color:#68bdff}
           headers:{Authorization:'Bearer '+token}
         });
         if(!fileResponse.ok){const detail=await fileResponse.text();throw new Error('File gagal diunduh dari Google Drive ('+fileResponse.status+'). '+detail.slice(0,220));}
-        const source=await fileResponse.arrayBuffer();
-        if(!source.byteLength)throw new Error('File Excel kosong.');
-        const workbook=XLSX.read(source,{type:'array',cellDates:false});
-        const sheet1Name=workbook.SheetNames[0],sheet2Name=workbook.SheetNames[1];
-        if(!sheet1Name||!workbook.Sheets[sheet1Name])throw new Error('Sheet 1 tidak ditemukan.');
-        if(!sheet2Name||!workbook.Sheets[sheet2Name])throw new Error('Sheet 2 tidak ditemukan. Tambahkan Sheet 2 yang berisi seluruh artikel lama dan baru.');
-        showStatus($('googleDriveStatus'),'info','Membaca Sheet 1 dan Sheet 2…');
-        const sheet1Matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheet1Name],{header:1,raw:false,defval:''});
-        const sheet2Matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheet2Name],{header:1,raw:false,defval:''});
-        const databaseRows=activeImportId?await loadCatalogRows(activeImportId):[];
-        const merged=buildMergedGoogleCatalog(sheet1Matrix,sheet2Matrix,databaseRows);
-
-        showStatus($('googleDriveStatus'),'info','Memperbarui Sheet 1: '+merged.added.toLocaleString('id-ID')+' artikel baru ditambahkan…');
-        workbook.Sheets[sheet1Name]=XLSX.utils.aoa_to_sheet(merged.matrix);
-        workbook.Workbook=workbook.Workbook||{};
-        workbook.Workbook.CalcPr=Object.assign({},workbook.Workbook.CalcPr||{},{calcMode:'auto',fullCalcOnLoad:true,forceFullCalc:true});
-        const output=XLSX.write(workbook,{bookType:'xlsx',type:'array'});
-        const upload=await fetch('https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(fileId)+'?uploadType=media',{
-          method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:output
-        });
-        if(!upload.ok)throw new Error('Sheet 1 gagal diperbarui di Google Drive ('+upload.status+'). '+(await upload.text()).slice(0,220));
-
-        showStatus($('googleDriveStatus'),'info','Sheet 1 sudah diperbarui. Menyimpan katalog gabungan ke database VELTRIX…');
-        try{
-          await publishDataset(merged.data,meta.name,merged.headers);
-        }catch(publishError){
-          throw new Error('Sheet 1 di Google Drive sudah diperbarui, tetapi database VELTRIX belum berhasil diperbarui. Ulangi sinkronisasi. Detail: '+(publishError.message||publishError));
-        }
-        showStatus($('googleDriveStatus'),'ok','Sinkronisasi berhasil. '+merged.data.length.toLocaleString('id-ID')+' artikel diproses; '+merged.added.toLocaleString('id-ID')+' artikel baru ditambahkan ke Sheet 1. UPC dan foto Admin dipertahankan; data stok mengikuti Sheet 2.');
+        const blob=await fileResponse.blob();
+        if(!blob.size)throw new Error('File Excel kosong.');
+        const file=new File([blob],meta.name,{type:meta.mimeType||'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        showStatus($('googleDriveStatus'),'info','Membaca dan memvalidasi isi Excel…');
+        const parsed=await readExcelFile(file);
+        await publishDataset(parsed.data,meta.name,parsed.headers);
+        showStatus($('googleDriveStatus'),'ok','Sinkronisasi berhasil. '+parsed.data.length.toLocaleString('id-ID')+' baris dari “'+meta.name+'” sudah diterapkan ke katalog.');
       }finally{$('syncGoogleDrive').disabled=false;}
     }
     async function updateGoogleDriveRow(original,values){
