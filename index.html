@@ -1236,21 +1236,23 @@ body.native-apk .top{padding-top:calc(25px + env(safe-area-inset-top, 0px) + 18p
       }
       $('notificationBell').addEventListener('click',async()=>{
         renderNotificationToggle();
-        const clearButton=$('clearNotificationHistory');
-        clearButton.hidden=false;
-        clearButton.disabled=false;
-        clearButton.textContent='Hapus Semua Riwayat';
+        $('clearNotificationHistory').hidden=!isAdmin;
         $('notificationBackdrop').hidden=false;
         try{await loadNotificationHistory(true);}catch(error){$('notificationList').innerHTML='<div class="notification-empty">Riwayat notifikasi gagal dimuat. Periksa koneksi internet.</div>';}
       });
       $('clearNotificationHistory').addEventListener('click',async()=>{
+        if(!isAdmin){$('clearNotificationHistory').hidden=true;return;}
         if(!window.confirm('Hapus SEMUA riwayat notifikasi dari database? Riwayat akan hilang untuk seluruh pengguna VELTRIX dan tidak dapat dipulihkan.'))return;
         const button=$('clearNotificationHistory');
         button.disabled=true;button.textContent='Menghapus…';
         try{
+          const {data:sessionData,error:sessionError}=await supabase.auth.getSession();
+          if(sessionError)throw sessionError;
+          const accessToken=sessionData?.session?.access_token;
+          if(!accessToken)throw new Error('Sesi Admin berakhir. Silakan login kembali.');
           const response=await fetch(cfg.url+'/functions/v1/clear-notification-history',{
             method:'POST',
-            headers:{'Content-Type':'application/json','apikey':cfg.publishableKey},
+            headers:{'Content-Type':'application/json','apikey':cfg.publishableKey,'Authorization':'Bearer '+accessToken},
             body:JSON.stringify({})
           });
           const result=await response.json();
