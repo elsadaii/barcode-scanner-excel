@@ -31,7 +31,7 @@ class AppUpdater(private val activity: Activity) {
                 if (!cursor.moveToFirst()) return
                 val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    activity.runOnUiThread { promptInstall() }
+                    activity.runOnUiThread { installOrRequestPermission() }
                 } else if (status == DownloadManager.STATUS_FAILED) {
                     prefs.edit().remove(KEY_DOWNLOAD_ID).apply()
                     activity.runOnUiThread {
@@ -153,17 +153,10 @@ class AppUpdater(private val activity: Activity) {
         }
     }
 
-    private fun promptInstall() {
-        AlertDialog.Builder(activity)
-            .setTitle("Unduhan selesai")
-            .setMessage("APK terbaru sudah diunduh. Lanjutkan pemasangan VELTRIX?")
-            .setNegativeButton("Nanti", null)
-            .setPositiveButton("Pasang") { _, _ -> installOrRequestPermission() }
-            .show()
-    }
-
     private fun installOrRequestPermission() {
         if (Build.VERSION.SDK_INT >= 26 && !activity.packageManager.canRequestPackageInstalls()) {
+            // Android requires this one-time permission before an app can launch
+            // its package installer. Returning from Settings resumes installation.
             val settingsIntent = Intent(
                 Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:" + activity.packageName)
@@ -171,6 +164,7 @@ class AppUpdater(private val activity: Activity) {
             activity.startActivity(settingsIntent)
             return
         }
+        // Open Android's installer immediately after the download completes.
         installDownloadedApk()
     }
 
