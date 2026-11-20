@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        current = this
         webView = WebView(this)
         webView.setBackgroundColor(android.graphics.Color.rgb(8, 23, 43))
         webView.settings.javaScriptEnabled = true
@@ -87,10 +88,12 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         webView.removeJavascriptInterface("VeltrixNativeScanner")
         webView.destroy()
+        current = null
         super.onDestroy()
     }
 
     companion object {
         var scannerActivity: ScannerActivity? = null
+        var current: MainActivity? = null
     }
 }
