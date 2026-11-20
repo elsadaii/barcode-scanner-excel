@@ -42,7 +42,24 @@ class VeltrixFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     companion object {
+        private const val PREFS = "veltrix_notifications"
+        private const val ENABLED = "enabled"
+
+        fun notificationsEnabled(context: Context): Boolean =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(ENABLED, true)
+
+        fun setNotificationsEnabled(context: Context, enabled: Boolean) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(ENABLED, enabled).apply()
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                sendTokenAction(context, token, if (enabled) "register" else "unregister")
+            }
+        }
+
         fun registerToken(context: Context, token: String) {
+            if (notificationsEnabled(context)) sendTokenAction(context, token, "register")
+        }
+
+        private fun sendTokenAction(context: Context, token: String, action: String) {
             Thread {
                 var connection: HttpURLConnection? = null
                 try {
@@ -52,14 +69,15 @@ class VeltrixFirebaseMessagingService : FirebaseMessagingService() {
                         readTimeout = 15000
                         doOutput = true
                         setRequestProperty("Content-Type", "application/json")
-                        setRequestProperty("apikey", "sb_publishable_CHpVU5_aG5E7V53I7P-hPQ_9qoPJPHk")
+                        setRequestProperty("apikey", "sb_publishable_CHpVU5_aH5G7E53I7P-hPQ_9qoPJPHk")
                         setRequestProperty("Origin", "https://elsadaii.github.io")
                     }
-                    val payload = JSONObject().put("token", token).put("platform", "android").toString()
+                    val payload = JSONObject().put("token", token).put("platform", "android").put("action", action).toString()
                     connection.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
-                    connection.inputStream.close()
+                    val responseCode = connection.responseCode
+                    if (responseCode >= 400) connection.errorStream?.close() else connection.inputStream.close()
                 } catch (_: Exception) {
-                    // Firebase retries token delivery after a new token is issued.
+                    // A later token refresh or user toggle can retry registration.
                 } finally {
                     connection?.disconnect()
                 }
