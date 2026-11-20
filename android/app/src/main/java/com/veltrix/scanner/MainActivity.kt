@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    private var appUpdater: AppUpdater? = null
     private lateinit var googleDriveAuthorizationLauncher: androidx.activity.result.ActivityResultLauncher<IntentSenderRequest>
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) openNativeScanner() else notifyCameraClosed()
@@ -76,6 +77,8 @@ class MainActivity : AppCompatActivity() {
         webView.addJavascriptInterface(NativeScannerBridge(), "VeltrixNativeScanner")
         setContentView(webView)
         webView.loadUrl("https://elsadaii.github.io/barcode-scanner-excel/?native=1")
+        appUpdater = AppUpdater(this)
+        appUpdater?.checkForUpdate()
     }
 
     inner class NativeScannerBridge {
@@ -166,6 +169,11 @@ class MainActivity : AppCompatActivity() {
         webView.evaluateJavascript("window.dispatchEvent(new CustomEvent('veltrix-native-scan',{detail:{value:$safe}}))", null)
     }
 
+    override fun onResume() {
+        super.onResume()
+        appUpdater?.resumePendingInstall()
+    }
+
     override fun onBackPressed() {
         if (scannerActivity != null) scannerActivity?.finish()
         else if (webView.canGoBack()) webView.goBack()
@@ -173,6 +181,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        appUpdater?.destroy()
+        appUpdater = null
         webView.removeJavascriptInterface("VeltrixNativeScanner")
         webView.destroy()
         current = null
