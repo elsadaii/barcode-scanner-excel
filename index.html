@@ -911,7 +911,7 @@ a{color:#68bdff}
       if(!pool.length)return probe;
       // Pada banyak perangkat Android, Camera 0 adalah sensor utama.
       pool.sort((a,b)=>{
-        const num=x=>{const m=x.label.match(/camera\\s*(\\d+)/i);return m?Number(m[1]):999;};
+        const num=x=>{const m=x.label.match(/camera\s*(\d+)/i);return m?Number(m[1]):999;};
         const score=x=>(/main|primary|wide|standard/i.test(x.label)?-100:0)+num(x);
         return score(a)-score(b);
       });
