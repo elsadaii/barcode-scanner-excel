@@ -13,7 +13,7 @@ importScripts('https://www.gstatic.com/firebasejs/13.4.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/13.4.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyCvFYHan3DwTfFty91T71gYcQIfXBpNXMk',
+  apiKey: 'AIzaSyCvFYHan3DwTfFty91t71gYcQIfXBpNXMk',
   authDomain: 'barcode-scanner-515214.firebaseapp.com',
   projectId: 'barcode-scanner-515214',
   storageBucket: 'barcode-scanner-515214.firebasestorage.app',
