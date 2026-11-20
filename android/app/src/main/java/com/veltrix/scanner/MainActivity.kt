@@ -63,6 +63,9 @@ class MainActivity : AppCompatActivity() {
         webView.settings.domStorageEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.allowFileAccess = false
+        // Always load the latest hosted VELTRIX page instead of stale WebView cache.
+        webView.settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+        webView.clearCache(true)
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
@@ -76,7 +79,7 @@ class MainActivity : AppCompatActivity() {
         }
         webView.addJavascriptInterface(NativeScannerBridge(), "VeltrixNativeScanner")
         setContentView(webView)
-        webView.loadUrl("https://elsadaii.github.io/barcode-scanner-excel/?native=1")
+        webView.loadUrl("https://elsadaii.github.io/barcode-scanner-excel/?native=1&appv=${BuildConfig.VERSION_CODE}")
         appUpdater = AppUpdater(this)
         appUpdater?.checkForUpdate()
     }
